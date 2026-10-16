@@ -1,0 +1,76 @@
+# Troubleshooting and limitations
+
+## Command not found
+
+Activate the venv in each terminal with `source .venv/bin/activate`. A harness may use
+a separate shell; point it at `<checkout>/.venv/bin/agent-bi` if PATH is not inherited.
+Installing the Python package alone does not install the repository's harness skills.
+
+## Rill version or project mismatch
+
+Use **v0.90.5** from the [pinned release](https://github.com/rilldata/rill/releases/tag/v0.90.5).
+Check `rill --version` (or `~/.rill/rill --version`). Start it from your analysis project:
+`rill start rill --no-open`. Agent BI's Rill verification checks the served project path
+and version at port 9009. A different project correctly causes `E_ENGINE_UNAVAILABLE`.
+Stop that server in its own terminal before starting the intended project.
+
+Allow initial reconciliation to finish. If the page remains loading, inspect the Rill
+terminal for source or component errors; a persistent loading screen is a failed check.
+The Rill UI's AI button is a separate feature and is not the Agent BI skill.
+
+## Missing config
+
+`init` requires `agent-bi.yaml`; it does not create an analysis directory from nothing.
+The checkout includes a working config. For your own workspace use the minimal config
+in the [user guide](user-guide.md#bring-your-own-table).
+
+## SQLite attachment fails on a view
+
+DuckDB's SQLite attachment can inspect views unrelated to the requested table. SQLite
+SQL that DuckDB cannot parse can prevent the entire attachment. A consumer project
+encountered this with an alias named `method` without `AS` in an unrelated view.
+
+For M1, extract the selected physical table into a separate SQLite database using your
+data preparation tools, preserve its columns/rows, and point `init` at that file. Verify
+the extract against the source and keep it read-only. Do not change production data or
+drop unrelated views to make the demo run. Native view handling is future work.
+
+## Why is a correct-looking answer exploratory?
+
+A resolved question is not necessarily verified. A known answer must match the exact
+semantic query, including filters. A filtered finance answer can remain exploratory
+while the unfiltered warehouse breakdown is governed. Accepting definitions does not
+create a verified query. `verified` and `governed` can also fall back to exploratory when
+definition changes make their evidence stale.
+
+The label describes the query that executed, not whether an agent correctly interpreted
+every word. Review the interpretation and filters on composed answers. Receipts do not
+yet record a dedicated verified/resolved/composed source field.
+
+## Repeated ambiguity prompts or smart punctuation
+
+The current resolver uses a closed grammar. Natural wording can require multiple picks;
+smart quotes, em dashes, accents and unsupported characters can lead to composition.
+Use explicit metric and dimension names for the deterministic path. Unsupported text
+must not be silently discarded as if a qualifier were absent.
+
+## Display and provenance details
+
+- The default canvas uses simple inferred KPIs and row counts; it is not a designed
+  business narrative. Saved charts currently lack a title.
+- The dashboard formats values (for example 4200.96 appears as 4,201). Inspect answer
+  JSON/SQL or known-answer output for exact stored results.
+- Saved daily charts can display dates in the browser's local time; UTC midnight may
+  appear on the previous local date.
+- The build manifest reflects the last `compile-rill`. Re-run it after accepting a
+  definition or promoting a verified query.
+- Agent BI verifies Rill's all-time, unfiltered results. A dashboard filter or time-range
+  change is outside that verified view.
+- `--by` is attribution, not authentication. Human acceptance relies on the operator's
+  workflow and environment permissions.
+- Exceptional filesystem failures can leave stale output or a traceback. Check the exit
+  code and the question/query in an artifact before reusing it.
+
+For a bug report, include the Agent BI/Rill/Python versions, command, exit code and
+sanitized error output. Do not upload credentials, private datasets or answer files
+containing confidential rows to a public issue.

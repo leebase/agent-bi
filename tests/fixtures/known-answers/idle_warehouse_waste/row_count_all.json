@@ -1,0 +1,36 @@
+{
+  "name": "row_count_all",
+  "query_hash": "sha256:75995a98f03bc78aed77242edac18e9abddff15b1658849a256f7b075441ddc6",
+  "semantic_digest": "sha256:1c6145a01e25d2aa56eda92179c9ac70fb85511ed8ec86633bb598e4d51bc936",
+  "definition_digests": {
+    "base_table": "sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672",
+    "row_count": "sha256:1464b4c5bc20377961e5849993a762c16d19ac1081eaec971d4a10800efd9b17"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "row_count"
+    ],
+    "dimensions": [],
+    "filters": [],
+    "named_filters": [],
+    "order_by": []
+  },
+  "expected": {
+    "columns": [
+      "row_count"
+    ],
+    "rows": [
+      [
+        21
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT COUNT(*) AS row_count FROM warehouse_metering_history",
+  "expected_sql_by": "sprint-0 implementer",
+  "expected_at": "2026-10-14T20:55:19Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

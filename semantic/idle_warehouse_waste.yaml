@@ -1,0 +1,181 @@
+name: idle_warehouse_waste
+description: Semantic model for FIXTURE.MAIN.warehouse_metering_history
+tables:
+- name: warehouse_metering_history
+  description: Scanned from FIXTURE.MAIN.warehouse_metering_history
+  base_table:
+    database: FIXTURE
+    schema: MAIN
+    table: warehouse_metering_history
+  dimensions:
+  - name: warehouse_name
+    synonyms: []
+    description: Column "warehouse_name" (VARCHAR)
+    expr: '"warehouse_name"'
+    data_type: TEXT
+  time_dimensions:
+  - name: usage_day
+    synonyms: []
+    description: Column "usage_day" (VARCHAR)
+    expr: CAST("usage_day" AS DATE)
+    data_type: DATE
+  facts:
+  - name: credits_used_compute
+    description: Column "credits_used_compute" (DOUBLE)
+    expr: '"credits_used_compute"'
+    data_type: NUMBER
+  - name: credits_used_cloud_services
+    description: Column "credits_used_cloud_services" (DOUBLE)
+    expr: '"credits_used_cloud_services"'
+    data_type: NUMBER
+  - name: credits_used
+    description: Column "credits_used" (DOUBLE)
+    expr: '"credits_used"'
+    data_type: NUMBER
+  metrics:
+  - name: row_count
+    synonyms: []
+    description: Number of rows
+    expr: COUNT(*)
+  - name: total_credits_used_compute
+    synonyms: []
+    description: Sum of "credits_used_compute"
+    expr: SUM("credits_used_compute")
+  - name: avg_credits_used_compute
+    synonyms: []
+    description: Average of "credits_used_compute"
+    expr: AVG("credits_used_compute")
+  - name: total_credits_used_cloud_services
+    synonyms: []
+    description: Sum of "credits_used_cloud_services"
+    expr: SUM("credits_used_cloud_services")
+  - name: avg_credits_used_cloud_services
+    synonyms: []
+    description: Average of "credits_used_cloud_services"
+    expr: AVG("credits_used_cloud_services")
+  - name: total_credits_used
+    synonyms: []
+    description: Sum of "credits_used"
+    expr: SUM("credits_used")
+  - name: avg_credits_used
+    synonyms: []
+    description: Average of "credits_used"
+    expr: AVG("credits_used")
+  - name: distinct_warehouse_name
+    synonyms: []
+    description: Distinct "warehouse_name" values
+    expr: COUNT(DISTINCT "warehouse_name")
+verified_queries:
+- name: total_credits_all
+  question: total credits used
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      SUM("credits_used") AS "total_credits_used"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    ORDER BY "total_credits_used" DESC
+    LIMIT 1000
+- name: credits_by_warehouse
+  question: credits by warehouse
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      "warehouse_name" AS "warehouse_name",
+      SUM("credits_used") AS "total_credits_used"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    GROUP BY "warehouse_name"
+    ORDER BY "total_credits_used" DESC, "warehouse_name" ASC
+    LIMIT 1000
+- name: credits_by_day
+  question: credits by day
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      DATE_TRUNC('day', TRY_TO_DATE("usage_day")) AS "time_bucket",
+      SUM("credits_used") AS "total_credits_used"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    GROUP BY "time_bucket"
+    ORDER BY "time_bucket" ASC, "total_credits_used" DESC
+    LIMIT 1000
+- name: row_count_all
+  question: how many rows
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      COUNT(*) AS "row_count"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    ORDER BY "row_count" DESC
+    LIMIT 1000
+- name: avg_compute_by_warehouse
+  question: average compute credits by warehouse
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      "warehouse_name" AS "warehouse_name",
+      AVG("credits_used_compute") AS "avg_credits_used_compute"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    GROUP BY "warehouse_name"
+    ORDER BY "avg_credits_used_compute" DESC, "warehouse_name" ASC
+    LIMIT 1000
+- name: compute_and_cloud_by_warehouse
+  question: compute and cloud services credits by warehouse
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      "warehouse_name" AS "warehouse_name",
+      SUM("credits_used_cloud_services") AS "total_credits_used_cloud_services",
+      SUM("credits_used_compute") AS "total_credits_used_compute"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    GROUP BY "warehouse_name"
+    ORDER BY "total_credits_used_cloud_services" DESC, "total_credits_used_compute" DESC, "warehouse_name" ASC
+    LIMIT 1000
+- name: averages_by_day
+  question: average credits and cloud services credits by day
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      DATE_TRUNC('day', TRY_TO_DATE("usage_day")) AS "time_bucket",
+      AVG("credits_used") AS "avg_credits_used",
+      AVG("credits_used_cloud_services") AS "avg_credits_used_cloud_services"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    GROUP BY "time_bucket"
+    ORDER BY "time_bucket" ASC, "avg_credits_used" DESC, "avg_credits_used_cloud_services" DESC
+    LIMIT 1000
+- name: distinct_warehouses
+  question: how many warehouses
+  verified_at: 1792017337
+  verified_by: sprint-2
+  sql: |-
+    SELECT
+      COUNT(DISTINCT "warehouse_name") AS "distinct_warehouse_name"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    ORDER BY "distinct_warehouse_name" DESC
+    LIMIT 1000
+- name: warehouses_by_day
+  question: how many warehouses per day
+  verified_at: 1792024363
+  verified_by: sprint-4
+  sql: |-
+    SELECT
+      DATE_TRUNC('day', TRY_TO_DATE("usage_day")) AS "time_bucket",
+      COUNT(DISTINCT "warehouse_name") AS "distinct_warehouse_name"
+    FROM "FIXTURE"."MAIN"."warehouse_metering_history"
+    WHERE 1=1
+    GROUP BY "time_bucket"
+    ORDER BY "time_bucket" ASC, "distinct_warehouse_name" DESC
+    LIMIT 1000

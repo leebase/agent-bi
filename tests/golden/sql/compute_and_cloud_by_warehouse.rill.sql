@@ -1,0 +1,1 @@
+SELECT warehouse_name, total_credits_used_cloud_services, total_credits_used_compute FROM idle_warehouse_waste ORDER BY total_credits_used_cloud_services DESC, total_credits_used_compute DESC, warehouse_name ASC LIMIT 1000

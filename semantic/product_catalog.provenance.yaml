@@ -1,0 +1,372 @@
+schema_version: agent-bi-provenance/1.0
+model: product_catalog
+scanned_at: '2026-10-14T22:00:10Z'
+engine: duckdb
+engine_version: 1.5.6
+source:
+  kind: sqlite
+  path_or_account: tests/fixtures/holiday-cookout-rush.sqlite
+  as_of_digest: sha256:b9cd42fb9b26c771ba3a0aa4959f00d81921f7b1144b893dd1a990a60a1b7494
+relation:
+  physical: FIXTURE2.MAIN.product_catalog
+  kind: table
+  row_count: 120
+  columns_digest: sha256:a5d6cd5e5a25239cbbead20d9776d1bc7291ccd093272e1955258d7b3a0ba5bb
+entries:
+  tables[0].dimensions[sku_id]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:b4d5fbbf21612aaa888f976d20637a5dd9ab2bef3cc3c9bf9c0df2988d86d2e3
+    unique: true
+  tables[0].dimensions[product_name]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:816870a059019039f14e06738562ef414da9ccb5345a16953d4c86a58658c6da
+    unique: true
+  tables[0].dimensions[species]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:84e2d5a0a8772bd48e3156c954dfb994690791a20ceba6790c1695bb510a7390
+    unique: false
+  tables[0].dimensions[cut]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:89a286b358d0aa6053e715b39ff65615e062daec508553750abd6d593178828d
+    unique: false
+  tables[0].dimensions[grade]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:dc0042fefbf54e556ca0b558e9c5a13fb8bd95717d0c57869d4d63f3ec01e99c
+    unique: false
+  tables[0].dimensions[occasion_tags]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:edef734931d874059c9b0e3c94392ad44d8f1b9c28726fe9613d8908c710ddf7
+    unique: false
+  tables[0].dimensions[cook_methods]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:37672aaeec971afdba38d44827c577c1c0b2dab258599cc502257d9db02af93e
+    unique: false
+  tables[0].dimensions[flavor_notes]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:bf3d2ab8fa32e6280432eef9495611fe3dac270d40da20810466421c8fca85bd
+    unique: false
+  tables[0].dimensions[fat_level]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:2d7daee321918c33b4721fb29d885fde4f5811d2efeb95a364b69de10ace698d
+    unique: false
+  tables[0].dimensions[origin_region]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:f0c5b03c4c5481424aaf80ac6d628bd151ece4b881ff8b4558a74dd74f4d9f0b
+    unique: false
+  tables[0].dimensions[substitution_group]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:7cd2bca3895152ac64989490afc40af6818526d0a761f5d0c68312b18d9ffd5e
+    unique: false
+  tables[0].dimensions[primary_substitute_sku_id]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:af3338cb3385df0190f9dba2e9d829ae93ea7bb6a1ec34c1073573ff46d46ccf
+    unique: true
+  tables[0].dimensions[upsell_family]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:7cddf919e6fddf08e4e28d3656fd849f3fefba3e30ddbf34a0a0bb3c59e2841d
+    unique: false
+  tables[0].facts[weight_lbs]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:d4c14842515d1e33353ec01ec6e8f98662d23e09778e2750f74fbd0f36801ccd
+  tables[0].facts[pack_count]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:e845095d010e221ce5d67a7bf73941099a777a7f9c6ab204b30f182db0dc3a9f
+  tables[0].facts[price]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:262780e07de7949a4ff2003b042b754e5fb5ec4142e954392835ab8d65a97334
+  tables[0].facts[compare_at_price]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:6b86fdd2447697e0e48fe36914ff83377522eb36a3820d10b1afffbfdee86136
+  tables[0].facts[servings_estimate]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:8a9514148c4eb854473a66e636e91b1e65783373830e7918c63aa800d4721e26
+  tables[0].facts[tenderness_score]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:8f06b35af9681a83c5b56b474c9fc9f1ba7b20df94b6066e12273ca31913e92c
+  tables[0].facts[is_best_seller]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:86e039d0827d19bfb31863e4e6121a222a408fb7ec5c5d0ebbce125d6055b205
+  tables[0].facts[is_limited_release]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:cd849267e5543085a53cff5cdf3c03507984518b5a465791743167f62fb93eee
+  tables[0].facts[bundle_eligible]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:e3b7cf835c0356af90b92a94eada6b3c7eb953e738498cc90db0ffabe04f1376
+  tables[0].facts[is_kid_friendly]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:7c94e01ab6197a638992a140dbfaabb1ccea347053711ddf7afd14c8a03f49ff
+  tables[0].facts[is_hero_product]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:63ef1a4027a45942f349da5972688ebf0132b0398f635a43f92bd21deb43f8d7
+  tables[0].metrics[row_count]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:1464b4c5bc20377961e5849993a762c16d19ac1081eaec971d4a10800efd9b17
+  tables[0].metrics[total_weight_lbs]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:9d4a8f79072e2d32acbc4192cc9f1b0d0e47dd0373ecad471a8e0e59c7ccd6df
+  tables[0].metrics[avg_weight_lbs]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:da9233d505a1b1a564aa66eaf78b031410a5ddb469a366977d49ca6c88743f0c
+  tables[0].metrics[total_pack_count]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:490ebd83be3ad417e9f2e664eb482e377bf3df3957c521dfdea7890aa94ea927
+  tables[0].metrics[avg_pack_count]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:316458f2daa69172c403812c590c72caba5a8c091445069937a43462c1b93377
+  tables[0].metrics[total_price]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:4b598b4822e3ded297c358f44089d8bfdf5a91a2aad7469f40131b696a356353
+  tables[0].metrics[avg_price]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:d13ad60192e5e0958237f78884352cee94d4a1010380da787b43675ea03d4d03
+  tables[0].metrics[total_compare_at_price]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:de6ef82b6e66d01d5d1bdb8d562279974ba916bca217577bc7c94b5bc10fd588
+  tables[0].metrics[avg_compare_at_price]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:b08998b56b1537632928c009d6b7ee521a2fb6d72823efd407c766172628a78b
+  tables[0].metrics[total_servings_estimate]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:679a27aa847dd0c49f7d3027069c6eccf32de95fd58bc57af5af9664eeaeedf7
+  tables[0].metrics[avg_servings_estimate]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:d4e3252bd3ef64658be52941e08d57fbbf8a95744e8d2180c7499cc00a9975ed
+  tables[0].metrics[total_tenderness_score]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:9e514e06cf350b6915fded872b2d3e33ffffd25a2812f7670e7af9110d3f0eaf
+  tables[0].metrics[avg_tenderness_score]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:4a958767d5f920c8bcbc8a772fe5d06f26239b56284438eba8563ebf771d2705
+  tables[0].metrics[total_is_best_seller]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:ed624dc1e899b78adfd6eeb3d792644542f7ae772ac793630c5d911d323ef062
+  tables[0].metrics[avg_is_best_seller]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:751b90e8c64f40f2c9847a7f637cecce810dae9326e659634f0a46a83fdec857
+  tables[0].metrics[total_is_limited_release]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:258ad066e8c0971a296e2b058114414c2f06d6ef27e7411bc85873a96d71a806
+  tables[0].metrics[avg_is_limited_release]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:c44ce18e4edf87a0ed3fc75d070c32d8996906a9542a660c346e5893d2d4f499
+  tables[0].metrics[total_bundle_eligible]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:2012fe6092ddc88136c8aa0d567d0148707a70517b381bc5e0eb48fb6a2404b0
+  tables[0].metrics[avg_bundle_eligible]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:968a44a67aa4c043b8f629be2fd0a6d00c381a057c50e3c9582fba687ddd8cba
+  tables[0].metrics[total_is_kid_friendly]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:aa57cf1f2ec3027b5ffd1e2f32f6f9ebe47899bc2fe1714e5d4c318d8175e0c7
+  tables[0].metrics[avg_is_kid_friendly]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:beba280f83d45c551dda24d825356979b7ba82ab77688706a147e489841e44b0
+  tables[0].metrics[total_is_hero_product]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:6a68140d56161bc5fe39c68679fae2f02d158f114ffe57531b877d39769f0e23
+  tables[0].metrics[avg_is_hero_product]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:45b27a6a74558c310c021f6891f4490f9e3077c3c0256d5b888bdb6b21d392fa
+  tables[0].metrics[distinct_species]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:01327f7d70cbd5f9b109aa3eea7628605d15b5d620b1dca4a895e43e2bda2a8b
+  tables[0].metrics[distinct_cut]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:5fa781960c3ae86d5821a007080c5204888f8db7e1f8efc33bc7ff66e0b79369
+  tables[0].metrics[distinct_grade]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:d55c1e65f387504b57886b434eab4f8977fc95fbe418774e04e6bb053bd36b20
+  tables[0].metrics[distinct_occasion_tags]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:a233d0af61389ae86754c7c4d20ef95fa714e14cb5609d024299fa91026a137b
+  tables[0].metrics[distinct_cook_methods]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:568c910dd66b338004776b6006206e4c955d551a58e842a91ff2fd67ee208ac6
+  tables[0].metrics[distinct_flavor_notes]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:9440a18bb9a26f7ca02e0712dba712df264bed25712b9d6e0d553b2bd4cdc3af
+  tables[0].metrics[distinct_fat_level]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:e999a0cd017d2e02536b6b7ea91fb836a568011a705b143b7432f04e6d119127
+  tables[0].metrics[distinct_origin_region]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:404e8556efc08c4340893fa586204a27fc0deda96ccbeb6ef0496aaac0e9bbf8
+  tables[0].metrics[distinct_substitution_group]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:95d02b742fc40dc95ae2cb5b2c9b014db7235441e2a2b8e068600d5a69ccbf47
+  tables[0].metrics[distinct_upsell_family]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:10Z'
+    by: scan
+    expr_sha256: sha256:940a6cff2be50a0adb7c151d365425cc4d1b98028d0d9e1f8b7a945934c8a0c3
+verified_queries: {}
+ignored_columns: []

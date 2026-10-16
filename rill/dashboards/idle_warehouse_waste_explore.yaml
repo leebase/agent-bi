@@ -1,0 +1,6 @@
+# agent-bi: generated from semantic/idle_warehouse_waste.yaml — do not edit; edit the semantic model and re-run compile-rill
+type: explore
+display_name: idle_warehouse_waste
+metrics_view: idle_warehouse_waste
+defaults:
+  time_range: inf

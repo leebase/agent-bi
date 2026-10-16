@@ -1,0 +1,77 @@
+{
+  "name": "averages_by_day",
+  "query_hash": "sha256:93104112d017b9ef17d9d8d026dd5b836dcc1248b93c0a94ebb8c168883ce4c4",
+  "semantic_digest": "sha256:6171ba4e4e92f0cffa77a3a74415bf1c9dda0abdc1f793442c458730c4b80124",
+  "definition_digests": {
+    "base_table": "sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672",
+    "avg_credits_used": "sha256:4f501ff686f7a2c3626ee8fd188ead1d647d17a0e9fa859ea5e2f3bd7359faa0",
+    "avg_credits_used_cloud_services": "sha256:f1df28e644bc99345a3a2fb5ea319a7149cda59f3b2519430578035837cf4d50",
+    "usage_day": "sha256:c77d4ef8851c2ad227f93b0bef78b97e2f88e4abd9749be9254a390d5fd9b7f4"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "avg_credits_used",
+      "avg_credits_used_cloud_services"
+    ],
+    "dimensions": [],
+    "time": {
+      "dimension": "usage_day",
+      "grain": "day"
+    },
+    "filters": [],
+    "named_filters": [],
+    "order_by": []
+  },
+  "expected": {
+    "columns": [
+      "time_bucket",
+      "avg_credits_used",
+      "avg_credits_used_cloud_services"
+    ],
+    "rows": [
+      [
+        "2026-06-01",
+        206.33333333333334,
+        8.253333333333332
+      ],
+      [
+        "2026-06-02",
+        210.33333333333334,
+        8.413333333333334
+      ],
+      [
+        "2026-06-03",
+        205.0,
+        8.200000000000001
+      ],
+      [
+        "2026-06-04",
+        211.66666666666666,
+        8.466666666666667
+      ],
+      [
+        "2026-06-05",
+        208.33333333333334,
+        8.333333333333334
+      ],
+      [
+        "2026-06-06",
+        206.0,
+        8.24
+      ],
+      [
+        "2026-06-07",
+        211.0,
+        8.44
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT date(usage_day) AS time_bucket, AVG(credits_used) AS avg_credits_used, AVG(credits_used_cloud_services) AS avg_credits_used_cloud_services FROM warehouse_metering_history GROUP BY date(usage_day) ORDER BY time_bucket ASC",
+  "expected_sql_by": "sprint-0 implementer",
+  "expected_at": "2026-10-14T20:55:19Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

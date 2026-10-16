@@ -1,0 +1,280 @@
+schema_version: agent-bi-provenance/1.0
+model: idle_warehouse_waste
+scanned_at: '2026-10-15T00:04:18Z'
+engine: duckdb
+engine_version: 1.5.6
+source:
+  kind: sqlite
+  path_or_account: tests/fixtures/idle-warehouse-waste.sqlite
+  as_of_digest: sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece
+relation:
+  physical: FIXTURE.MAIN.warehouse_metering_history
+  kind: table
+  row_count: 21
+  columns_digest: sha256:7f72a42ba4e2deb0e1aae600bc40db25c78df6f0e755c794dce8db941f269ed5
+entries:
+  tables[0].dimensions[warehouse_name]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:65125159377db5d34112370b2829c7af7ca906cc49b3cf844545e97969ff8367
+    unique: false
+  tables[0].time_dimensions[usage_day]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:c77d4ef8851c2ad227f93b0bef78b97e2f88e4abd9749be9254a390d5fd9b7f4
+    unique: false
+  tables[0].facts[credits_used_compute]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:2b48e0e7755056f8e97032a9c6122f6c64bc3cf2a68f1bfd180ff4d5d535f1ab
+  tables[0].facts[credits_used_cloud_services]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:d3a0da78323a2652c30488d9ef78ac76ff6ca2b3ffff03c8f361951f051e3c82
+  tables[0].facts[credits_used]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:02d349ef6c4d4e60cda06dba83165db7028723202df94fe45d48b8e833f48415
+  tables[0].metrics[row_count]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:1464b4c5bc20377961e5849993a762c16d19ac1081eaec971d4a10800efd9b17
+  tables[0].metrics[total_credits_used_compute]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:b6916ccb354ea74a38432292cf586a9159337678f1b28299d8b5fb37e257dd28
+  tables[0].metrics[avg_credits_used_compute]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:b42b856c21ed70151d9d22cb5f6dfbb901c3095042ab6641363a0e0ae66fdc21
+  tables[0].metrics[total_credits_used_cloud_services]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:ad3355fa9fe897700b756b1d17086210a789eeb6c956d16e064e5f0a14656aad
+  tables[0].metrics[avg_credits_used_cloud_services]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:f1df28e644bc99345a3a2fb5ea319a7149cda59f3b2519430578035837cf4d50
+  tables[0].metrics[total_credits_used]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+  tables[0].metrics[avg_credits_used]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:4f501ff686f7a2c3626ee8fd188ead1d647d17a0e9fa859ea5e2f3bd7359faa0
+  tables[0].metrics[distinct_warehouse_name]:
+    status: catalog
+    origin: scan
+    at: '2026-10-14T22:00:09Z'
+    by: scan
+    expr_sha256: sha256:feb50effb4c549e18da29f12b6549a297996bf0cf8161f473cd42f156d32add7
+verified_queries:
+  total_credits_all:
+    query_hash: sha256:6dc5cde0fc697bf376cf57018f76dd269a7987ccbdda64b34932afdbc6f2f92a
+    semantic_digest: sha256:92a732755ec081ba2c7756cbe0d76333d39f1a5770ca90361292e3f2f5e2b748
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      total_credits_used: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: total credits used
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/total_credits_all.json
+  credits_by_warehouse:
+    query_hash: sha256:28a29b6593efff6a85c2de86a667f7d6d83f01413c23fc9cdc40436e253c4267
+    semantic_digest: sha256:f6c3375e8986e0dd6a1d32e9f6c6baa76fc4d67c848785701d845e5a3d91b7f6
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      total_credits_used: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+      warehouse_name: sha256:65125159377db5d34112370b2829c7af7ca906cc49b3cf844545e97969ff8367
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions:
+      - warehouse_name
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: credits by warehouse
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/credits_by_warehouse.json
+  credits_by_day:
+    query_hash: sha256:23cf5608a684df5a5bef7d089d84244d76c3eac4d1d276ee29705a1ce91e5581
+    semantic_digest: sha256:513e456d7d271d0bb047a85382eba08e217dc8e63f85d0aab7101bfb6e2a1d1d
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      total_credits_used: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+      usage_day: sha256:c77d4ef8851c2ad227f93b0bef78b97e2f88e4abd9749be9254a390d5fd9b7f4
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: &id001
+        dimension: usage_day
+        grain: day
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: credits by day
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/credits_by_day.json
+  row_count_all:
+    query_hash: sha256:75995a98f03bc78aed77242edac18e9abddff15b1658849a256f7b075441ddc6
+    semantic_digest: sha256:1c6145a01e25d2aa56eda92179c9ac70fb85511ed8ec86633bb598e4d51bc936
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      row_count: sha256:1464b4c5bc20377961e5849993a762c16d19ac1081eaec971d4a10800efd9b17
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - row_count
+      dimensions: []
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: how many rows
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/row_count_all.json
+  avg_compute_by_warehouse:
+    query_hash: sha256:65e0207ca91cef94d1011b7fe50a71fd95752cd3b7a37e0fa744c3e49596e12e
+    semantic_digest: sha256:0e0e506386c467022c9a8beaa6146b6af6583a4a4cc43bca3d6aeda451337f82
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      avg_credits_used_compute: sha256:b42b856c21ed70151d9d22cb5f6dfbb901c3095042ab6641363a0e0ae66fdc21
+      warehouse_name: sha256:65125159377db5d34112370b2829c7af7ca906cc49b3cf844545e97969ff8367
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - avg_credits_used_compute
+      dimensions:
+      - warehouse_name
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: average compute credits by warehouse
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/avg_compute_by_warehouse.json
+  compute_and_cloud_by_warehouse:
+    query_hash: sha256:5476468360f4b2985bb51670c3bf0501be210db51824a51fddd9cb69ced05d4d
+    semantic_digest: sha256:0c83b562d81a2c6df935d5ad9c999f162403506fefde3f576525b982c0c700a5
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      total_credits_used_cloud_services: sha256:ad3355fa9fe897700b756b1d17086210a789eeb6c956d16e064e5f0a14656aad
+      total_credits_used_compute: sha256:b6916ccb354ea74a38432292cf586a9159337678f1b28299d8b5fb37e257dd28
+      warehouse_name: sha256:65125159377db5d34112370b2829c7af7ca906cc49b3cf844545e97969ff8367
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used_compute
+      - total_credits_used_cloud_services
+      dimensions:
+      - warehouse_name
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: compute and cloud services credits by warehouse
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/compute_and_cloud_by_warehouse.json
+  averages_by_day:
+    query_hash: sha256:93104112d017b9ef17d9d8d026dd5b836dcc1248b93c0a94ebb8c168883ce4c4
+    semantic_digest: sha256:6171ba4e4e92f0cffa77a3a74415bf1c9dda0abdc1f793442c458730c4b80124
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      avg_credits_used: sha256:4f501ff686f7a2c3626ee8fd188ead1d647d17a0e9fa859ea5e2f3bd7359faa0
+      avg_credits_used_cloud_services: sha256:f1df28e644bc99345a3a2fb5ea319a7149cda59f3b2519430578035837cf4d50
+      usage_day: sha256:c77d4ef8851c2ad227f93b0bef78b97e2f88e4abd9749be9254a390d5fd9b7f4
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - avg_credits_used
+      - avg_credits_used_cloud_services
+      dimensions: []
+      time: *id001
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: average credits and cloud services credits by day
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/averages_by_day.json
+  distinct_warehouses:
+    query_hash: sha256:044da31f335e22985439f6f7452ae69dc3c35c53e2406bd21c54c737925374ea
+    semantic_digest: sha256:453692218708299a9d1cad5fa3d0caa77f810bc2e69c89ef4a846e199ecdbafb
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      distinct_warehouse_name: sha256:feb50effb4c549e18da29f12b6549a297996bf0cf8161f473cd42f156d32add7
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - distinct_warehouse_name
+      dimensions: []
+      filters: []
+      named_filters: []
+      order_by: []
+    question_normalized: how many warehouses
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/distinct_warehouses.json
+  warehouses_by_day:
+    query_hash: sha256:7fa7da60703adf91d9729097d0ec33a7acf2d741f0e0c60374ba1c208122964f
+    semantic_digest: sha256:0c97025490e4268b7ac0c2d441e569d7f6ad9cde4b83b7b3746df53f8d360a7b
+    definition_digests:
+      base_table: sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672
+      distinct_warehouse_name: sha256:feb50effb4c549e18da29f12b6549a297996bf0cf8161f473cd42f156d32add7
+      usage_day: sha256:c77d4ef8851c2ad227f93b0bef78b97e2f88e4abd9749be9254a390d5fd9b7f4
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - distinct_warehouse_name
+      dimensions: []
+      time:
+        dimension: usage_day
+        grain: day
+      filters: []
+      named_filters: []
+      order_by: []
+      limit: 1000
+    question_normalized: how many warehouses per day
+    known_answer: tests/fixtures/known-answers/idle_warehouse_waste/warehouses_by_day.json
+ignored_columns: []

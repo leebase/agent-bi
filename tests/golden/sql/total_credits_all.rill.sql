@@ -1,0 +1,1 @@
+SELECT total_credits_used FROM idle_warehouse_waste ORDER BY total_credits_used DESC LIMIT 1000

@@ -1,0 +1,56 @@
+name: rv6
+description: Sprint 4P frozen-contract resolver fixture rv6 (invented columns)
+tables:
+- name: sales_spend
+  description: Resolver fixture table sales_spend
+  base_table:
+    database: FIXTURE
+    schema: MAIN
+    table: sales_spend
+  dimensions:
+  - name: store_region
+    synonyms: []
+    description: Test object store_region
+    expr: '"store_region"'
+    data_type: TEXT
+  - name: region_code
+    synonyms:
+    - region by
+    description: Test object region_code
+    expr: '"region_code"'
+    data_type: TEXT
+  - name: team_lead
+    synonyms: []
+    description: Test object team_lead
+    expr: '"team_lead"'
+    data_type: TEXT
+  - name: lead_source
+    synonyms:
+    - lead in
+    description: Test object lead_source
+    expr: '"lead_source"'
+    data_type: TEXT
+  time_dimensions:
+  - name: usage_day
+    synonyms: []
+    description: Test object usage_day
+    expr: CAST("usage_day" AS DATE)
+    data_type: DATE
+  facts:
+  - name: revenue_amount
+    description: Column revenue_amount
+    expr: '"revenue_amount"'
+    data_type: NUMBER
+  - name: spend_amount
+    description: Column spend_amount
+    expr: '"spend_amount"'
+    data_type: NUMBER
+  metrics:
+  - name: revenue
+    synonyms: []
+    description: Test metric revenue
+    expr: SUM("revenue_amount")
+  - name: spend
+    synonyms: []
+    description: Test metric spend
+    expr: SUM("spend_amount")

@@ -1,0 +1,36 @@
+{
+  "name": "distinct_warehouses",
+  "query_hash": "sha256:044da31f335e22985439f6f7452ae69dc3c35c53e2406bd21c54c737925374ea",
+  "semantic_digest": "sha256:453692218708299a9d1cad5fa3d0caa77f810bc2e69c89ef4a846e199ecdbafb",
+  "definition_digests": {
+    "base_table": "sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672",
+    "distinct_warehouse_name": "sha256:feb50effb4c549e18da29f12b6549a297996bf0cf8161f473cd42f156d32add7"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "distinct_warehouse_name"
+    ],
+    "dimensions": [],
+    "filters": [],
+    "named_filters": [],
+    "order_by": []
+  },
+  "expected": {
+    "columns": [
+      "distinct_warehouse_name"
+    ],
+    "rows": [
+      [
+        3
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT COUNT(DISTINCT warehouse_name) AS distinct_warehouse_name FROM warehouse_metering_history",
+  "expected_sql_by": "sprint-0 implementer",
+  "expected_at": "2026-10-14T20:55:19Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

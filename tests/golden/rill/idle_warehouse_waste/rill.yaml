@@ -1,0 +1,5 @@
+compiler: rillv1
+
+display_name: agent-bi
+
+olap_connector: duckdb

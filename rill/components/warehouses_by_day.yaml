@@ -1,0 +1,10 @@
+# agent_bi_query_hash: sha256:7fa7da60703adf91d9729097d0ec33a7acf2d741f0e0c60374ba1c208122964f
+# agent_bi_semantic_digest: sha256:0c97025490e4268b7ac0c2d441e569d7f6ad9cde4b83b7b3746df53f8d360a7b
+# agent_bi_sql_sha256: sha256:3d1466c92e446d78deb2858c9f18e51d9c72f48da6032083e5b97b0f0580d44b
+type: component
+display_name: warehouses_by_day
+custom_chart:
+  metrics_view: idle_warehouse_waste
+  metrics_sql:
+    - SELECT date_trunc('DAY', usage_day) AS time_bucket, distinct_warehouse_name FROM idle_warehouse_waste ORDER BY time_bucket ASC, distinct_warehouse_name DESC LIMIT 1000
+  vega_spec: '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"name":"query1"},"mark":"line","encoding":{"x":{"field":"time_bucket","type":"temporal"},"y":{"field":"distinct_warehouse_name","type":"quantitative","axis":{"format":",.0f"}},"tooltip":[{"field":"time_bucket","type":"temporal"},{"field":"distinct_warehouse_name","type":"quantitative"}]},"width":"container","height":"container","autosize":{"type":"fit"},"config":{}}'

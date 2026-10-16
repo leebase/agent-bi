@@ -1,0 +1,44 @@
+{
+  "name": "credits_by_warehouse",
+  "query_hash": "sha256:28a29b6593efff6a85c2de86a667f7d6d83f01413c23fc9cdc40436e253c4267",
+  "semantic_digest": "sha256:f6c3375e8986e0dd6a1d32e9f6c6baa76fc4d67c848785701d845e5a3d91b7f6",
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "total_credits_used"
+    ],
+    "dimensions": [
+      "warehouse_name"
+    ],
+    "filters": [],
+    "named_filters": [],
+    "order_by": []
+  },
+  "expected": {
+    "columns": [
+      "warehouse_name",
+      "total_credits_used"
+    ],
+    "rows": [
+      [
+        "FINANCE_REPORTING_WH",
+        2740.0
+      ],
+      [
+        "MARKETING_ADHOC_WH",
+        1093.0
+      ],
+      [
+        "CORE_ELT_WH",
+        544.0
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT warehouse_name, SUM(credits_used) AS total_credits_used FROM warehouse_metering_history GROUP BY warehouse_name ORDER BY total_credits_used DESC, warehouse_name ASC",
+  "expected_sql_by": "negative fixture: expected value deliberately wrong (first row +1.0)",
+  "expected_at": "2026-10-14T20:55:19Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

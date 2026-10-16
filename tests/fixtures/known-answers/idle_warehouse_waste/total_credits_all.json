@@ -1,0 +1,36 @@
+{
+  "name": "total_credits_all",
+  "query_hash": "sha256:6dc5cde0fc697bf376cf57018f76dd269a7987ccbdda64b34932afdbc6f2f92a",
+  "semantic_digest": "sha256:92a732755ec081ba2c7756cbe0d76333d39f1a5770ca90361292e3f2f5e2b748",
+  "definition_digests": {
+    "base_table": "sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672",
+    "total_credits_used": "sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "total_credits_used"
+    ],
+    "dimensions": [],
+    "filters": [],
+    "named_filters": [],
+    "order_by": []
+  },
+  "expected": {
+    "columns": [
+      "total_credits_used"
+    ],
+    "rows": [
+      [
+        4376.0
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT SUM(credits_used) AS total_credits_used FROM warehouse_metering_history",
+  "expected_sql_by": "sprint-0 implementer",
+  "expected_at": "2026-10-14T20:55:19Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

@@ -1,0 +1,1 @@
+SELECT row_count FROM idle_warehouse_waste ORDER BY row_count DESC LIMIT 1000

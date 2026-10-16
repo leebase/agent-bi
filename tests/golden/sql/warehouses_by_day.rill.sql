@@ -1,0 +1,1 @@
+SELECT date_trunc('DAY', usage_day) AS time_bucket, distinct_warehouse_name FROM idle_warehouse_waste ORDER BY time_bucket ASC, distinct_warehouse_name DESC LIMIT 1000

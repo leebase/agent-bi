@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-bi"
+dynamic = ["version"]
+description = "Table-to-dashboard-and-chat tool in which no LLM produces a number."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
+authors = [{name = "Lee Harrington"}]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2",
+    "pyyaml",
+    "duckdb",
+]
+
+[project.optional-dependencies]
+snowflake = ["snowflake-connector-python"]
+dev = ["pytest", "ruff", "build"]
+
+[project.urls]
+Homepage = "https://github.com/leebase/agent-bi"
+Documentation = "https://github.com/leebase/agent-bi/blob/main/docs/user-guide.md"
+Issues = "https://github.com/leebase/agent-bi/issues"
+
+[project.scripts]
+agent-bi = "agent_bi.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"agent_bi.query" = ["contract_header.md"]
+
+[tool.setuptools.dynamic]
+version = {attr = "agent_bi.version.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["snowflake: requires AGENT_BI_SNOWFLAKE_* environment (skipped when unset)"]

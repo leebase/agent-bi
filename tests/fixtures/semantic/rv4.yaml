@@ -1,0 +1,40 @@
+name: rv4
+description: Sprint 4R reviewer-adversarial resolver fixture rv4 (invented columns)
+tables:
+- name: warehouse_usage
+  description: Resolver fixture table warehouse_usage
+  base_table:
+    database: FIXTURE
+    schema: MAIN
+    table: warehouse_usage
+  dimensions:
+  - name: warehouse_name
+    synonyms: []
+    description: Test object warehouse_name
+    expr: '"warehouse_name"'
+    data_type: TEXT
+  - name: warehouse_size
+    synonyms: []
+    description: Test object warehouse_size
+    expr: '"warehouse_size"'
+    data_type: TEXT
+  time_dimensions:
+  - name: usage_day
+    synonyms: []
+    description: Test object usage_day
+    expr: CAST("usage_day" AS DATE)
+    data_type: DATE
+  facts:
+  - name: credits
+    description: Column credits
+    expr: '"credits"'
+    data_type: NUMBER
+  metrics:
+  - name: distinct_warehouse_name
+    synonyms: []
+    description: Test metric distinct_warehouse_name
+    expr: COUNT(DISTINCT "warehouse_name")
+  - name: total_credits
+    synonyms: []
+    description: Test metric total_credits
+    expr: SUM("credits")

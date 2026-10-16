@@ -1,0 +1,256 @@
+name: product_catalog
+description: Semantic model for FIXTURE2.MAIN.product_catalog
+tables:
+- name: product_catalog
+  description: Scanned from FIXTURE2.MAIN.product_catalog
+  base_table:
+    database: FIXTURE2
+    schema: MAIN
+    table: product_catalog
+  primary_key:
+    columns:
+    - skuId
+  dimensions:
+  - name: sku_id
+    synonyms: []
+    description: Column "skuId" (VARCHAR)
+    expr: '"skuId"'
+    data_type: TEXT
+  - name: product_name
+    synonyms: []
+    description: Column "productName" (VARCHAR)
+    expr: '"productName"'
+    data_type: TEXT
+  - name: species
+    synonyms: []
+    description: Column "species" (VARCHAR)
+    expr: '"species"'
+    data_type: TEXT
+  - name: cut
+    synonyms: []
+    description: Column "cut" (VARCHAR)
+    expr: '"cut"'
+    data_type: TEXT
+  - name: grade
+    synonyms: []
+    description: Column "grade" (VARCHAR)
+    expr: '"grade"'
+    data_type: TEXT
+  - name: occasion_tags
+    synonyms: []
+    description: Column "occasionTags" (VARCHAR)
+    expr: '"occasionTags"'
+    data_type: TEXT
+  - name: cook_methods
+    synonyms: []
+    description: Column "cookMethods" (VARCHAR)
+    expr: '"cookMethods"'
+    data_type: TEXT
+  - name: flavor_notes
+    synonyms: []
+    description: Column "flavorNotes" (VARCHAR)
+    expr: '"flavorNotes"'
+    data_type: TEXT
+  - name: fat_level
+    synonyms: []
+    description: Column "fatLevel" (VARCHAR)
+    expr: '"fatLevel"'
+    data_type: TEXT
+  - name: origin_region
+    synonyms: []
+    description: Column "originRegion" (VARCHAR)
+    expr: '"originRegion"'
+    data_type: TEXT
+  - name: substitution_group
+    synonyms: []
+    description: Column "substitutionGroup" (VARCHAR)
+    expr: '"substitutionGroup"'
+    data_type: TEXT
+  - name: primary_substitute_sku_id
+    synonyms: []
+    description: Column "primarySubstituteSkuId" (VARCHAR)
+    expr: '"primarySubstituteSkuId"'
+    data_type: TEXT
+  - name: upsell_family
+    synonyms: []
+    description: Column "upsellFamily" (VARCHAR)
+    expr: '"upsellFamily"'
+    data_type: TEXT
+  facts:
+  - name: weight_lbs
+    description: Column "weightLbs" (DOUBLE)
+    expr: '"weightLbs"'
+    data_type: NUMBER
+  - name: pack_count
+    description: Column "packCount" (BIGINT)
+    expr: '"packCount"'
+    data_type: NUMBER
+  - name: price
+    description: Column "price" (DOUBLE)
+    expr: '"price"'
+    data_type: NUMBER
+  - name: compare_at_price
+    description: Column "compareAtPrice" (DOUBLE)
+    expr: '"compareAtPrice"'
+    data_type: NUMBER
+  - name: servings_estimate
+    description: Column "servingsEstimate" (BIGINT)
+    expr: '"servingsEstimate"'
+    data_type: NUMBER
+  - name: tenderness_score
+    description: Column "tendernessScore" (DOUBLE)
+    expr: '"tendernessScore"'
+    data_type: NUMBER
+  - name: is_best_seller
+    description: Column "isBestSeller" (BIGINT)
+    expr: '"isBestSeller"'
+    data_type: NUMBER
+  - name: is_limited_release
+    description: Column "isLimitedRelease" (BIGINT)
+    expr: '"isLimitedRelease"'
+    data_type: NUMBER
+  - name: bundle_eligible
+    description: Column "bundleEligible" (BIGINT)
+    expr: '"bundleEligible"'
+    data_type: NUMBER
+  - name: is_kid_friendly
+    description: Column "isKidFriendly" (BIGINT)
+    expr: '"isKidFriendly"'
+    data_type: NUMBER
+  - name: is_hero_product
+    description: Column "isHeroProduct" (BIGINT)
+    expr: '"isHeroProduct"'
+    data_type: NUMBER
+  metrics:
+  - name: row_count
+    synonyms: []
+    description: Number of rows
+    expr: COUNT(*)
+  - name: total_weight_lbs
+    synonyms: []
+    description: Sum of "weightLbs"
+    expr: SUM("weightLbs")
+  - name: avg_weight_lbs
+    synonyms: []
+    description: Average of "weightLbs"
+    expr: AVG("weightLbs")
+  - name: total_pack_count
+    synonyms: []
+    description: Sum of "packCount"
+    expr: SUM("packCount")
+  - name: avg_pack_count
+    synonyms: []
+    description: Average of "packCount"
+    expr: AVG("packCount")
+  - name: total_price
+    synonyms: []
+    description: Sum of "price"
+    expr: SUM("price")
+  - name: avg_price
+    synonyms: []
+    description: Average of "price"
+    expr: AVG("price")
+  - name: total_compare_at_price
+    synonyms: []
+    description: Sum of "compareAtPrice"
+    expr: SUM("compareAtPrice")
+  - name: avg_compare_at_price
+    synonyms: []
+    description: Average of "compareAtPrice"
+    expr: AVG("compareAtPrice")
+  - name: total_servings_estimate
+    synonyms: []
+    description: Sum of "servingsEstimate"
+    expr: SUM("servingsEstimate")
+  - name: avg_servings_estimate
+    synonyms: []
+    description: Average of "servingsEstimate"
+    expr: AVG("servingsEstimate")
+  - name: total_tenderness_score
+    synonyms: []
+    description: Sum of "tendernessScore"
+    expr: SUM("tendernessScore")
+  - name: avg_tenderness_score
+    synonyms: []
+    description: Average of "tendernessScore"
+    expr: AVG("tendernessScore")
+  - name: total_is_best_seller
+    synonyms: []
+    description: Sum of "isBestSeller"
+    expr: SUM("isBestSeller")
+  - name: avg_is_best_seller
+    synonyms: []
+    description: Average of "isBestSeller"
+    expr: AVG("isBestSeller")
+  - name: total_is_limited_release
+    synonyms: []
+    description: Sum of "isLimitedRelease"
+    expr: SUM("isLimitedRelease")
+  - name: avg_is_limited_release
+    synonyms: []
+    description: Average of "isLimitedRelease"
+    expr: AVG("isLimitedRelease")
+  - name: total_bundle_eligible
+    synonyms: []
+    description: Sum of "bundleEligible"
+    expr: SUM("bundleEligible")
+  - name: avg_bundle_eligible
+    synonyms: []
+    description: Average of "bundleEligible"
+    expr: AVG("bundleEligible")
+  - name: total_is_kid_friendly
+    synonyms: []
+    description: Sum of "isKidFriendly"
+    expr: SUM("isKidFriendly")
+  - name: avg_is_kid_friendly
+    synonyms: []
+    description: Average of "isKidFriendly"
+    expr: AVG("isKidFriendly")
+  - name: total_is_hero_product
+    synonyms: []
+    description: Sum of "isHeroProduct"
+    expr: SUM("isHeroProduct")
+  - name: avg_is_hero_product
+    synonyms: []
+    description: Average of "isHeroProduct"
+    expr: AVG("isHeroProduct")
+  - name: distinct_species
+    synonyms: []
+    description: Distinct "species" values
+    expr: COUNT(DISTINCT "species")
+  - name: distinct_cut
+    synonyms: []
+    description: Distinct "cut" values
+    expr: COUNT(DISTINCT "cut")
+  - name: distinct_grade
+    synonyms: []
+    description: Distinct "grade" values
+    expr: COUNT(DISTINCT "grade")
+  - name: distinct_occasion_tags
+    synonyms: []
+    description: Distinct "occasionTags" values
+    expr: COUNT(DISTINCT "occasionTags")
+  - name: distinct_cook_methods
+    synonyms: []
+    description: Distinct "cookMethods" values
+    expr: COUNT(DISTINCT "cookMethods")
+  - name: distinct_flavor_notes
+    synonyms: []
+    description: Distinct "flavorNotes" values
+    expr: COUNT(DISTINCT "flavorNotes")
+  - name: distinct_fat_level
+    synonyms: []
+    description: Distinct "fatLevel" values
+    expr: COUNT(DISTINCT "fatLevel")
+  - name: distinct_origin_region
+    synonyms: []
+    description: Distinct "originRegion" values
+    expr: COUNT(DISTINCT "originRegion")
+  - name: distinct_substitution_group
+    synonyms: []
+    description: Distinct "substitutionGroup" values
+    expr: COUNT(DISTINCT "substitutionGroup")
+  - name: distinct_upsell_family
+    synonyms: []
+    description: Distinct "upsellFamily" values
+    expr: COUNT(DISTINCT "upsellFamily")

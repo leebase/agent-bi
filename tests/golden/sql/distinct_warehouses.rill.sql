@@ -1,0 +1,1 @@
+SELECT distinct_warehouse_name FROM idle_warehouse_waste ORDER BY distinct_warehouse_name DESC LIMIT 1000

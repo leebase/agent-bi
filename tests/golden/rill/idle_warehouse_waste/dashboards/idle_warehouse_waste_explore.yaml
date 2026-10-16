@@ -1,0 +1,5 @@
+type: explore
+display_name: idle_warehouse_waste
+metrics_view: idle_warehouse_waste
+defaults:
+  time_range: inf

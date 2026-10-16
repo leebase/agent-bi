@@ -1,0 +1,6 @@
+# agent-bi: generated project file — do not edit; re-run compile-rill
+compiler: rillv1
+
+display_name: agent-bi
+
+olap_connector: duckdb

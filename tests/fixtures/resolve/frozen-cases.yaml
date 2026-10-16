@@ -1,0 +1,5891 @@
+# FROZEN resolver contract cases (agent-bi architecture §5.15, frozen 2026-10-15, D414; tag resolve-contract-frozen-20261015).
+# Source: the Sprint 4P rule reviewer's text-only derivations, cases-r5.yaml (171 entries: 170 single-call + the Q16 sequence),
+# whose expectations are kept unchanged. Mechanically added by the supervisor after the freeze, from the two reviewer sentences
+# adopted verbatim: (A5-1) every ambiguity candidate as {value, kind, description} — kind = the object's kind or "grain" for an
+# @grain candidate; description = the object's YAML description or "" (inline models have none; every @grain candidate);
+# (A5-2) for RESOLVED: the complete semantic_query (schema_version "semantic-query/1.0", model, table, metrics, dimensions, time
+# only when settled; filters/named_filters/order_by/limit absent) and query_hash = agent_bi.query.contract.query_hash(semantic_query)
+# (Sprint 2 implementation, independently reviewed).
+# Inline-model convention (test harness, not contract): an inline model keyed K is materialized as model name k (lower-case) with
+# one table named t_k; objects as listed; no descriptions.
+# Implementations must reproduce every field below; a mismatch is a finding (FAIL-OPEN), never an edit to this file.
+# OWNER AMENDMENT D417 (2026-10-15, tag resolve-contract-amended-20261015): rows ROW42–ROW44 now use the committed fixtures
+# tests/fixtures/semantic/rv5.yaml and rv6.yaml (the inline rv5/rv6 stand-ins are removed; table, query_hash and candidate
+# descriptions recomputed from the fixtures); cases AMD1–AMD4 added (grain collapse; failure removes result; per-occurrence
+# unmatched words; per-match rule-6 entries). A sequence step may carry its own `model` (AMD2 uses a missing model `nosuch`).
+# OWNER AMENDMENT D421 (2026-10-15, tag resolve-contract-amended2-20261015): rule 1 normalizes like verified-question lookup
+# (NFKC, lower-case) and keeps every non-whitespace run containing a non-ASCII character as an unmatched word. Cases AMD5–AMD8
+# added; no earlier case changes (none has a non-ASCII question). File is UTF-8.
+models:
+  D:
+    metrics:
+    - total_credits
+    dimensions:
+    - billing_account
+    time_dimensions:
+    - usage_day
+    - billing_date
+    name: d
+    table: t_d
+  D2:
+    metrics:
+    - total_credits
+    dimensions:
+    - billing_account
+    - ship_mode
+    time_dimensions:
+    - usage_day
+    - billing_date
+    - ship_date
+    name: d2
+    table: t_d2
+  D3:
+    metrics:
+    - total_credits
+    dimensions:
+    - ship_mode
+    time_dimensions:
+    - usage_day
+    - billing_date
+    - ship_date
+    name: d3
+    table: t_d3
+  DS:
+    metrics:
+    - total_credits
+    dimensions:
+    - name: billing_cycle
+      synonyms:
+      - billing period
+    time_dimensions:
+    - usage_day
+    - name: billing_date
+      synonyms:
+      - billing period
+    name: ds
+    table: t_ds
+  K:
+    metrics:
+    - name: alpha
+      synonyms:
+      - red blue
+      - green gold
+    dimensions:
+    - name: beta
+      synonyms:
+      - blue green
+    name: k
+    table: t_k
+  X:
+    metrics:
+    - name: alpha
+      synonyms:
+      - red blue
+      - gold
+    dimensions:
+    - name: beta
+      synonyms:
+      - blue gold
+    name: x
+    table: t_x
+  F:
+    metrics:
+    - spend
+    dimensions:
+    - team_lead
+    - name: lead_source
+      synonyms:
+      - lead in
+    time_dimensions:
+    - usage_day
+    name: f
+    table: t_f
+  F0:
+    metrics:
+    - spend
+    dimensions:
+    - team_lead
+    time_dimensions:
+    - usage_day
+    name: f0
+    table: t_f0
+  G:
+    metrics:
+    - revenue
+    dimensions:
+    - store_region
+    - name: region_code
+      synonyms:
+      - region by
+    name: g
+    table: t_g
+  G0:
+    metrics:
+    - revenue
+    dimensions:
+    - store_region
+    name: g0
+    table: t_g0
+  H:
+    metrics:
+    - net_loss
+    dimensions:
+    - name: loss_type
+      synonyms:
+      - loss or
+    - region
+    name: h
+    table: t_h
+  T:
+    metrics:
+    - revenue
+    dimensions:
+    - cost_center
+    - name: center_period
+      synonyms:
+      - center month
+    time_dimensions:
+    - order_date
+    name: t
+    table: t_t
+  T0:
+    metrics:
+    - revenue
+    dimensions:
+    - cost_center
+    time_dimensions:
+    - order_date
+    name: t0
+    table: t_t0
+  S:
+    metrics:
+    - name: total_sales
+      synonyms:
+      - sale by region
+    dimensions:
+    - name: region_manager
+      synonyms:
+      - region manager name
+    name: s
+    table: t_s
+  U:
+    metrics:
+    - total_usage
+    time_dimensions:
+    - usage_day
+    name: u
+    table: t_u
+  G2:
+    metrics:
+    - revenue
+    dimensions:
+    - store_region
+    - name: region_code
+      synonyms:
+      - region per
+    name: g2
+    table: t_g2
+  J:
+    metrics:
+    - revenue
+    dimensions:
+    - sales_zone
+    - name: zone_type
+      synonyms:
+      - zone and
+    time_dimensions:
+    - order_date
+    name: j
+    table: t_j
+  T2:
+    metrics:
+    - revenue
+    dimensions:
+    - cost_center
+    - name: center_period
+      synonyms:
+      - center day
+    time_dimensions:
+    - order_date
+    name: t2
+    table: t_t2
+  C4:
+    metrics:
+    - name: alpha
+      synonyms:
+      - red blue
+    dimensions:
+    - name: beta
+      synonyms:
+      - blue green
+    - name: gamma
+      synonyms:
+      - gold red blue green
+    name: c4
+    table: t_c4
+  K2:
+    metrics:
+    - name: alpha
+      synonyms:
+      - red blue
+      - blue green
+    dimensions:
+    - beta
+    name: k2
+    table: t_k2
+  N:
+    metrics:
+    - revenue
+    dimensions:
+    - region
+    name: n
+    table: t_n
+  N2:
+    metrics:
+    - revenue
+    dimensions:
+    - region
+    - day_of_week
+    name: n2
+    table: t_n2
+cases:
+- id: P01
+  model: rv1
+  question: total sales by customer region manager
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: customer region manager
+      reason: overlapping phrases
+      candidates:
+      - value: customer_region
+        kind: dimension
+        description: Test object customer_region
+      - value: region_manager
+        kind: dimension
+        description: Test object region_manager
+    unresolved: []
+    bindings:
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 1
+  - 4
+  - 5
+  - 9
+  - Output
+- id: P02
+  model: rv1
+  question: total sales by customer region manager
+  choose:
+  - customer region manager=region_manager
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 9
+  - 10
+  - Output
+- id: P03
+  model: rv1
+  question: total sales by customer region manager
+  choose:
+  - customer region manager=customer_region
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: manager
+      reason: rejected interpretation material
+    bindings:
+    - object: customer_region
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 9
+  - 10
+  - Output
+- id: P04
+  model: rv1
+  question: total sales by customer region manager
+  choose:
+  - customer region manager:4=region_manager
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: customer region manager:4=region_manager'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: one occurrence -> the id is the plain span text; the :n form does not exist.
+  rules_used:
+  - 7
+  - 10
+  - Output
+- id: P05
+  model: rv1
+  question: total sales by customer region manager and customer
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: customer region manager
+      reason: overlapping phrases
+      candidates:
+      - value: customer_region
+        kind: dimension
+        description: Test object customer_region
+      - value: region_manager
+        kind: dimension
+        description: Test object region_manager
+    - id: customer
+      reason: several objects
+      candidates:
+      - value: customer_name
+        kind: dimension
+        description: Test object customer_name
+      - value: customer_region
+        kind: dimension
+        description: Test object customer_region
+    unresolved: []
+    bindings:
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: '"customer" at 4 is span material, not a rule-7 occurrence, so the word id is plain "customer" (position 8 only)'
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 9
+  - Output
+- id: P06
+  model: rv1
+  question: total sales by customer region manager and customer
+  choose:
+  - customer region manager=region_manager
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: customer
+      reason: several objects
+      candidates:
+      - value: customer_name
+        kind: dimension
+        description: Test object customer_name
+      - value: customer_region
+        kind: dimension
+        description: Test object customer_region
+    unresolved:
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: status precedence after a pick — ambiguity outranks the rejected material (rule 9).
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - 10
+  - Output
+- id: P07
+  model: rv1
+  question: total sales by customer region manager and customer
+  choose:
+  - customer region manager=region_manager
+  - customer=customer_name
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: customer_name
+      kind: dimension
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: the word pick for position 8 does not reach the rejected "customer" at position 4.
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - 10
+  - Output
+- id: P08
+  model: K
+  question: red blue green gold
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: red blue green gold
+      reason: overlapping phrases
+      candidates:
+      - value: alpha
+        kind: metric
+        description: ''
+      - value: beta
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: chain alpha(1-2) beta(2-3) alpha(3-4); read as one cluster (overlap taken transitively) — see B-1.
+  rules_used:
+  - 4
+  - 9
+  - Output
+- id: P09
+  model: K
+  question: red blue green gold
+  choose:
+  - red blue green gold=alpha
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - alpha
+    dimensions: []
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: alpha
+      kind: metric
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: k
+      table: t_k
+      metrics:
+      - alpha
+      dimensions: []
+    query_hash: sha256:c50ee2cbe8a6c1c24391ab9652196caeb444c954ac5f7313af770b21aba0d902
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 9
+  - 10
+  - 11
+  - Output
+- id: P10
+  model: K
+  question: red blue green gold
+  choose:
+  - red blue green gold=beta
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: red
+      reason: rejected interpretation material
+    - word: gold
+      reason: rejected interpretation material
+    bindings:
+    - object: beta
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: red and gold are alpha synonym words (rule 7 would bind them) but rejected material never re-enters rule 7.
+  rules_used:
+  - 4
+  - 9
+  - 10
+  - Output
+- id: P11
+  model: X
+  question: red blue gold
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: red blue gold
+      reason: overlapping phrases
+      candidates:
+      - value: alpha
+        kind: metric
+        description: ''
+      - value: beta
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 9
+  - Output
+- id: P12
+  model: X
+  question: red blue gold
+  choose:
+  - red blue gold=alpha
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: gold
+      reason: rejected interpretation material
+    bindings:
+    - object: alpha
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'A-4 resolved: cluster matches only'
+  rules_used:
+  - 4
+  - 10
+  - Output
+- id: P13
+  model: X
+  question: red blue gold
+  choose:
+  - red blue gold=beta
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: red
+      reason: rejected interpretation material
+    bindings:
+    - object: beta
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 10
+  - Output
+- id: P14
+  model: F
+  question: spend by team lead in month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: team lead in
+      reason: overlapping phrases
+      candidates:
+      - value: lead_source
+        kind: dimension
+        description: ''
+      - value: team_lead
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: spend
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: '"in" is span material, so it does not close the grouping phrase; month is a grain in zero-pick'
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: P15
+  model: F
+  question: spend by team lead in month
+  choose:
+  - team lead in=team_lead
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: in
+      reason: rejected interpretation material
+    bindings:
+    - object: spend
+      kind: metric
+    - object: team_lead
+      kind: dimension
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - 10
+  - Output
+- id: P16
+  model: F
+  question: spend by team lead in month
+  choose:
+  - team lead in=lead_source
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: team
+      reason: rejected interpretation material
+    bindings:
+    - object: lead_source
+      kind: dimension
+    - object: spend
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 9
+  - 10
+  - Output
+- id: P17
+  model: F0
+  question: spend by team lead in month
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: month
+      reason: time grain outside grouping phrase
+    bindings:
+    - object: spend
+      kind: metric
+    - object: team_lead
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: control for P15 — the same surface sentence without the rejected interpretation.
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 9
+  - Output
+- id: P18
+  model: G
+  question: store region by revenue
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: store region by
+      reason: overlapping phrases
+      candidates:
+      - value: region_code
+        kind: dimension
+        description: ''
+      - value: store_region
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: revenue
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 9
+  - Output
+- id: P19
+  model: G
+  question: store region by revenue
+  choose:
+  - store region by=store_region
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: by
+      reason: rejected interpretation material
+    bindings:
+    - object: revenue
+      kind: metric
+    - object: store_region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 6
+  - 9
+  - 10
+  - Output
+- id: P20
+  model: G0
+  question: store region by revenue
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: revenue
+      reason: metric in grouping position
+    bindings:
+    - object: store_region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: control for P19.
+  rules_used:
+  - 4
+  - 5
+  - 6
+  - 9
+  - Output
+- id: P21
+  model: H
+  question: net loss or region
+  choose:
+  - net loss or=net_loss
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: or
+      reason: rejected interpretation material
+    bindings:
+    - object: net_loss
+      kind: metric
+    - object: region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: '"or" is not in the closed function-word list, so a rejected "or" is reported as rejected material, not disjunction (B-11)'
+  rules_used:
+  - 2
+  - 4
+  - 9
+  - 10
+  - Output
+- id: P22
+  model: T
+  question: revenue by cost center month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: cost center month
+      reason: overlapping phrases
+      candidates:
+      - value: center_period
+        kind: dimension
+        description: ''
+      - value: cost_center
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: revenue
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: month is span material, not a grain; no time in zero-pick.
+  rules_used:
+  - 4
+  - 5
+  - 8
+  - 9
+  - Output
+- id: P23
+  model: T
+  question: revenue by cost center month
+  choose:
+  - cost center month=cost_center
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: month
+      reason: rejected interpretation material
+    bindings:
+    - object: cost_center
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: rejected grain word never re-enters rule 7/8 (control T0 would resolve with order_date month).
+  rules_used:
+  - 4
+  - 8
+  - 9
+  - 10
+  - Output
+- id: P24
+  model: T0
+  question: revenue by cost center month
+  choose: []
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - revenue
+    dimensions:
+    - cost_center
+    time: &id001
+      dimension: order_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: cost_center
+      kind: dimension
+    - object: order_date
+      kind: time_dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: t0
+      table: t_t0
+      metrics:
+      - revenue
+      dimensions:
+      - cost_center
+      time: *id001
+    query_hash: sha256:c2fed0d4bc9f3b528bb6340e8d7279918499bb642849f88bddb35b8c9678261d
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - 11
+  - Output
+- id: P25
+  model: S
+  question: total sales by region manager name
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: sale by region manager name
+      reason: overlapping phrases
+      candidates:
+      - value: region_manager
+        kind: dimension
+        description: ''
+      - value: total_sales
+        kind: metric
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: '"total" binds total_sales by rule 7 (no grouping phrase: "by" is span material)'
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 9
+  - Output
+- id: P26
+  model: S
+  question: total sales by region manager name
+  choose:
+  - sale by region manager name=region_manager
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: sale
+      reason: rejected interpretation material
+    - word: by
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: '"sale" is redundant (total_sales already bound via "total") yet UNRESOLVED; rejected "by" dropped and opens nothing (B-3)'
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 9
+  - 10
+  - Output
+- id: P27
+  model: S
+  question: total sales by region manager name
+  choose:
+  - sale by region manager name=total_sales
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: manager
+      reason: rejected interpretation material
+    - word: name
+      reason: rejected interpretation material
+    bindings:
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 9
+  - 10
+  - Output
+- id: P28
+  model: rv1
+  question: total sales by region manager
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: total
+      reason: several objects
+      candidates:
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+      - value: total_sales
+        kind: metric
+        description: Test metric total_sales
+    unresolved: []
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: synonym "sales by region" (3 words) swallows "by"; no grouping phrase; manager binds region_manager outside (B-9)
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 9
+  - Output
+- id: P29
+  model: rv1
+  question: total sales by region manager
+  choose:
+  - total=total_sales
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_sales
+    dimensions:
+    - region_manager
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv1
+      table: orders
+      metrics:
+      - total_sales
+      dimensions:
+      - region_manager
+    query_hash: sha256:4e43b75d578dd7eee32f3b1d2f3ca7aeaff77b5c9326d080bde0e050b8c0f6de
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - 10
+  - 11
+  - Output
+- id: I01
+  model: rv1
+  question: orders by region
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: region
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    unresolved: []
+    bindings:
+    - object: order_count
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 1
+  - 4
+  - 9
+  - Output
+- id: I02
+  model: rv1
+  question: orders by region
+  choose:
+  - region=region_total
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: region
+      reason: metric in grouping position
+    bindings:
+    - object: order_count
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: rule 4 offers a metric candidate that rule 6 must refuse in this position (B-2)
+  rules_used:
+  - 4
+  - 6
+  - 9
+  - 10
+  - Output
+- id: I03
+  model: rv1
+  question: orders by region
+  choose:
+  - region=region
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - order_count
+    dimensions:
+    - region
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: order_count
+      kind: metric
+    - object: region
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv1
+      table: orders
+      metrics:
+      - order_count
+      dimensions:
+      - region
+    query_hash: sha256:48d67cc292d3dd09181130cb0d26dd18f30e6a345d7ce812383e47498b6f4197
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 6
+  - 9
+  - 10
+  - 11
+  - Output
+- id: I04
+  model: rv1
+  question: region by region
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: region:1
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    - id: region:3
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 9
+  - Output
+- id: I05
+  model: rv1
+  question: region by region
+  choose:
+  - region:1=region_total
+  - region:3=region
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - region_total
+    dimensions:
+    - region
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: region
+      kind: dimension
+    - object: region_total
+      kind: metric
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv1
+      table: orders
+      metrics:
+      - region_total
+      dimensions:
+      - region
+    query_hash: sha256:2334b20e28d4d1d8df215f901af2bca628415d3511990eac812a9d0627476784
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 6
+  - 7
+  - 10
+  - 11
+  - Output
+- id: I06
+  model: rv1
+  question: region by region
+  choose:
+  - region=region
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: region=region'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 10
+  - Output
+- id: I07
+  model: rv1
+  question: region by region
+  choose:
+  - region:1=region
+  - region:3=region_total
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: region
+      reason: metric in grouping position
+    bindings:
+    - object: region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 6
+  - 9
+  - 10
+  - Output
+- id: I08
+  model: rv1
+  question: region and region
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: region
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - Output
+- id: I09
+  model: rv1
+  question: region and region
+  choose:
+  - region=region_total
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - region_total
+    dimensions: []
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: region_total
+      kind: metric
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv1
+      table: orders
+      metrics:
+      - region_total
+      dimensions: []
+    query_hash: sha256:445c8e97f74d7963642a8f0c984825be490d8e38509042755f098e47a9b55ef7
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 7
+  - 10
+  - 11
+  - Output
+- id: I10
+  model: rv1
+  question: region and region by region
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: region:1
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    - id: region:3
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    - id: region:5
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'A-5 resolved: all-or-nothing'
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - Output
+- id: I11
+  model: tie
+  question: spend by spend
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: spend:1
+      reason: phrase shared by several objects
+      candidates:
+      - value: total_credits_used
+        kind: metric
+        description: Sum of "credits_used"
+      - value: total_credits_used_compute
+        kind: metric
+        description: Sum of "credits_used_compute"
+    - id: spend:3
+      reason: phrase shared by several objects
+      candidates:
+      - value: total_credits_used
+        kind: metric
+        description: Sum of "credits_used"
+      - value: total_credits_used_compute
+        kind: metric
+        description: Sum of "credits_used_compute"
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - Output
+- id: I12
+  model: tie
+  question: spend by spend
+  choose:
+  - spend:1=total_credits_used
+  - spend:3=total_credits_used_compute
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: spend
+      reason: metric in grouping position
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 6
+  - 9
+  - 10
+  - Output
+- id: W01
+  model: iww
+  question: warehouse by warehouse
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Distinct "warehouse_name" values
+      - value: warehouse_name
+        kind: dimension
+        description: Column "warehouse_name" (VARCHAR)
+    unresolved: []
+    bindings:
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: position 3 has one candidate and is bound; only position 1 is an ambiguous occurrence -> plain id.
+  rules_used:
+  - 5
+  - 7
+  - 9
+  - Output
+- id: W02
+  model: iww
+  question: warehouse by warehouse
+  choose:
+  - warehouse=distinct_warehouse_name
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - distinct_warehouse_name
+    dimensions:
+    - warehouse_name
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: distinct_warehouse_name
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - distinct_warehouse_name
+      dimensions:
+      - warehouse_name
+    query_hash: sha256:33a2fa2ac2d3857564fbab7feff36e894e8c335652b692701a2e41421173d518
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'A-6 resolved: only ambiguous occurrences'
+  rules_used:
+  - 7
+  - 10
+  - 11
+  - Output
+- id: W03
+  model: iww
+  question: warehouse and warehouse
+  choose:
+  - warehouse=warehouse_name
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics: []
+    dimensions:
+    - warehouse_name
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics: []
+      dimensions:
+      - warehouse_name
+    query_hash: sha256:57188a988b95e4e64daf83fd9509d71e302c3a1495692e0bc0e13cfd60c63144
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 9
+  - 10
+  - 11
+  - Output
+- id: W04
+  model: iww
+  question: warehouse and warehouse
+  choose:
+  - warehouse:1=warehouse_name
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: warehouse:1=warehouse_name'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 10
+  - Output
+- id: W05
+  model: rv4
+  question: warehouse by warehouse and warehouse
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse:1
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:3
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:5
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: positions 3 and 5 coincide but get their own ids because not all occurrences match.
+  rules_used:
+  - 5
+  - 7
+  - 9
+  - Output
+- id: W06
+  model: rv4
+  question: warehouse by warehouse and warehouse
+  choose:
+  - warehouse:1=distinct_warehouse_name
+  - warehouse:3=warehouse_name
+  - warehouse:5=warehouse_size
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - distinct_warehouse_name
+    dimensions:
+    - warehouse_name
+    - warehouse_size
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: distinct_warehouse_name
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    - object: warehouse_size
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv4
+      table: warehouse_usage
+      metrics:
+      - distinct_warehouse_name
+      dimensions:
+      - warehouse_name
+      - warehouse_size
+    query_hash: sha256:589f764989e3d35bbfbab457bfdb253d75b89a07e885729e256ff42a7814ffe4
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 10
+  - 11
+  - Output
+- id: W07
+  model: rv4
+  question: warehouse by warehouse and warehouse
+  choose:
+  - warehouse:3=warehouse_name
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse:1
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:5
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    unresolved: []
+    bindings:
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 9
+  - 10
+  - Output
+- id: W08
+  model: rv4
+  question: by warehouse and warehouse
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 5
+  - 7
+  - 9
+  - Output
+- id: W09
+  model: D
+  question: billing by billing
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: billing:1
+      reason: several objects
+      candidates:
+      - value: billing_account
+        kind: dimension
+        description: ''
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+    - id: billing:3
+      reason: several objects
+      candidates:
+      - value: billing_account
+        kind: dimension
+        description: ''
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: identical sets, different position class -> separate ids.
+  rules_used:
+  - 5
+  - 7
+  - 9
+  - Output
+- id: W10
+  model: D
+  question: billing by billing
+  choose:
+  - billing:1=billing_account
+  - billing:3=billing_date
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics: []
+    dimensions:
+    - billing_account
+    time: &id002
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_account
+      kind: dimension
+    - object: billing_date
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics: []
+      dimensions:
+      - billing_account
+      time: *id002
+    query_hash: sha256:1eb4c0cd941a4c5b3d1d3c3ebe3e4aeeef5d7d539e060aebad35c5b7fa0b287e
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - Output
+- id: W11
+  model: D
+  question: billing by billing
+  choose:
+  - billing:1=billing_date
+  - billing:3=billing_date
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: null
+      reason: no metric or dimension
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    grain: day
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'B-4 resolved: distinct named dates; word null'
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: W12
+  model: U
+  question: show usage
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: usage
+      reason: metric and dimension
+      candidates:
+      - value: total_usage
+        kind: metric
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'A-8 resolved: time dimension counts'
+  rules_used:
+  - 7
+  - 9
+  - Output
+- id: R01
+  model: D
+  question: total credits by usage day and billing
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: billing
+      reason: several objects
+      candidates:
+      - value: billing_account
+        kind: dimension
+        description: ''
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: R02
+  model: D
+  question: total credits by usage day and billing
+  choose:
+  - billing=billing_account
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions:
+    - billing_account
+    time: &id003
+      dimension: usage_day
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_account
+      kind: dimension
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions:
+      - billing_account
+      time: *id003
+    query_hash: sha256:a120c57147de1bd8fe5fa608bc2efcf69ca57f978aa1f0dea99b8742d9367bb2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 8
+  - 10
+  - 11
+  - Output
+- id: R03
+  model: D
+  question: total credits by usage day and billing
+  choose:
+  - billing=billing_date
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-2
+  origin: r1
+  note: the draft's own example of an ambiguity that exists only because picks were applied.
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: R04
+  model: D
+  question: total credits by usage day and billing
+  choose:
+  - billing=billing_date
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id004
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id004
+    query_hash: sha256:13b1978994824dcf70257a627c5967efc64adccbfa25c12199bb32a857242a19
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: literal reading makes R03's reported ambiguity unanswerable (dead end).
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: R05
+  model: D
+  question: total credits by usage day and billing
+  choose:
+  - billing=billing_date
+  - '@date=usage_day'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id005
+      dimension: usage_day
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id005
+    query_hash: sha256:4d0ee65a728130644e3320e98a97408fd213344e26adbf2ab96a3168b78a4b91
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 10
+  - Output
+- id: R06
+  model: DS
+  question: total credits by usage day and billing period
+  choose:
+  - billing period=billing_date
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-2
+  origin: r1
+  note: span-pick variant; the follow-up "@date=..." is now valid (see N08)
+  rules_used:
+  - 4
+  - 8
+  - 9
+  - 10
+  - Output
+- id: R07
+  model: D
+  question: total credits by billing and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: billing
+      reason: several objects
+      candidates:
+      - value: billing_account
+        kind: dimension
+        description: ''
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+    - id: '@date'
+      reason: several eligible dates, none named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: R08
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_date
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id006
+      dimension: billing_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id006
+    query_hash: sha256:42af64aaf11d22fd702ae712794c56af53effbcc14cf46e1c1e6e9702f80d15a
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: a pick removes a zero-pick ambiguity (@date) — allowed; nothing was picked for @date.
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - 11
+  - Output
+- id: R09
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_account
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several eligible dates, none named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: billing_account
+      kind: dimension
+    - object: total_credits
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: R10
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_account
+  - '@date=usage_day'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions:
+    - billing_account
+    time: &id007
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_account
+      kind: dimension
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions:
+      - billing_account
+      time: *id007
+    query_hash: sha256:a8686c39488b47e3f411be8e5874c6148dc9216ea0f9ff1738456661ba3340fe
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 8
+  - 10
+  - 11
+  - Output
+- id: R11
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_date
+  - '@date=usage_day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date=usage_day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 10
+  - Output
+- id: R12
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_date
+  - '@date=billing_date'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date=billing_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 8
+  - 10
+  - 11
+  - Output
+- id: R13
+  model: D3
+  question: total credits by usage day and billing date and ship
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: ship
+      reason: several objects
+      candidates:
+      - value: ship_date
+        kind: time_dimension
+        description: ''
+      - value: ship_mode
+        kind: dimension
+        description: ''
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-2
+  origin: r1
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: R14
+  model: D3
+  question: total credits by usage day and billing date and ship
+  choose:
+  - ship=ship_date
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: ship_date
+        kind: time_dimension
+        description: ''
+      - value: usage_day
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-2
+  origin: r1
+  note: 'A-2 resolved: stage-1 resolution re-runs rule 8'
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: R15
+  model: D3
+  question: total credits by usage day and billing date and ship
+  choose:
+  - ship=ship_date
+  - '@date=ship_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id008
+      dimension: ship_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: ship_date
+      kind: time_dimension
+    - object: total_credits
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d3
+      table: t_d3
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id008
+    query_hash: sha256:f5a65d97d1f7d46d0b6559a444aae57d5578fee99a1113fbb39372cf37f669b1
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: ship_date is not a zero-pick @date candidate; a user who picks ship_date for "ship" can never finish (A-1/A-2).
+  rules_used:
+  - 10
+  - Output
+- id: R16
+  model: D3
+  question: total credits by usage day and billing date and ship
+  choose:
+  - ship=ship_mode
+  - '@date=usage_day'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions:
+    - ship_mode
+    time: &id009
+      dimension: usage_day
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: ship_mode
+      kind: dimension
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d3
+      table: t_d3
+      metrics:
+      - total_credits
+      dimensions:
+      - ship_mode
+      time: *id009
+    query_hash: sha256:2817b6e876a13515c282c5d63c206bff70d6fc5b4174052aff3c0c3d08781ba9
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: stage-2 candidates [billing_date, usage_day]; billing_date replaced -> absent from bindings
+  rules_used:
+  - 8
+  - 10
+  - 11
+  - Output
+- id: R17
+  model: D2
+  question: total credits by billing and ship and month
+  choose:
+  - billing=billing_date
+  - ship=ship_date
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+      - value: ship_date
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: A-2 resolved
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: R18
+  model: D2
+  question: total credits by billing and ship and month
+  choose:
+  - billing=billing_date
+  - ship=ship_date
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id010
+      dimension: billing_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d2
+      table: t_d2
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id010
+    query_hash: sha256:696819cd627958fcb070fa3af349a4edc5a0c5ccd9b73fc5e8e7df78c9e15924
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 10
+  - Output
+- id: E01
+  model: iww
+  question: total credits used by day and month
+  choose:
+  - '@grain=month'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id011
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id011
+    query_hash: sha256:a556b5533124ce0815a00163a320e402caf1b9b8ee1de4d1682eeefc51b4718e
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 8
+  - 10
+  - 11
+  - Output
+- id: E02
+  model: iww
+  question: total credits used by day and month
+  choose:
+  - '@grain=week'
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: @grain=week'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 10
+  - Output
+- id: E03
+  model: two
+  question: total credits used by day and month
+  choose:
+  - '@grain=month'
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several eligible dates, none named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: Column "billing_date" (VARCHAR)
+      - value: usage_day
+        kind: time_dimension
+        description: Column "usage_day" (VARCHAR)
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: E04
+  model: two
+  question: total credits used by day and month
+  choose:
+  - '@grain=month'
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id012
+      dimension: billing_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id012
+    query_hash: sha256:12d7382e71cdd41d2d82a121844492987135d90ad30dee02f56330296a0da1a9
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 8
+  - 10
+  - 11
+  - Output
+- id: E05
+  model: two
+  question: total credits used by billing date and usage day
+  choose:
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id013
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id013
+    query_hash: sha256:d9e0bde42017b37d2a6c581e2ab2e89291b1740622d9cd19200ceee7c10538d1
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: usage_day absent from bindings (r2); whether billing_date stays via "phrase" or becomes via "pick" is A2-1
+  rules_used:
+  - 4
+  - 8
+  - 10
+  - 11
+  - Output
+- id: E06
+  model: two
+  question: total credits used by billing date and usage day
+  choose:
+  - '@date=billing_date'
+  - '@date=usage_day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: conflicting values
+    stderr: 'E_BAD_CHOICE: conflicting values: @date=billing_date; @date=usage_day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 10
+  - Output
+- id: E07
+  model: iww
+  question: total credits used by month
+  choose:
+  - '@date=usage_day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date=usage_day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: E08
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=total_credits_used_compute
+  - compute=total_credits_used_compute
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used_compute
+    dimensions:
+    - warehouse_name
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used_compute
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used_compute
+      dimensions:
+      - warehouse_name
+    query_hash: sha256:53f03607799918a5a646d6ca149b66c49514582051c8467c1444ecc4df52c938
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'A-7 resolved: repeated identical pick counts once'
+  rules_used:
+  - 10
+  - Output
+- id: E09
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: malformed
+    stderr: 'E_BAD_CHOICE: malformed: compute'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 10
+  - Output
+- id: E10
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - nosuch=row_count
+  - compute=row_count
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: nosuch=row_count'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  note: 'A-7: first argument fails first under either order'
+  rules_used:
+  - 10
+  - Output
+- id: E11
+  model: iww
+  question: credits by warehouse for finance
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: credit
+      reason: several objects
+      candidates:
+      - value: avg_credits_used
+        kind: metric
+        description: Average of "credits_used"
+      - value: avg_credits_used_cloud_services
+        kind: metric
+        description: Average of "credits_used_cloud_services"
+      - value: avg_credits_used_compute
+        kind: metric
+        description: Average of "credits_used_compute"
+      - value: total_credits_used
+        kind: metric
+        description: Sum of "credits_used"
+      - value: total_credits_used_cloud_services
+        kind: metric
+        description: Sum of "credits_used_cloud_services"
+      - value: total_credits_used_compute
+        kind: metric
+        description: Sum of "credits_used_compute"
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    bindings:
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 5
+  - 7
+  - 9
+  - Output
+- id: E12
+  model: iww
+  question: credits by warehouse for finance
+  choose:
+  - credit=total_credits_used
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r1
+  rules_used:
+  - 7
+  - 9
+  - 10
+  - Output
+- id: N01
+  model: G2
+  question: store region per revenue
+  choose:
+  - store region per=store_region
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: per
+      reason: rejected interpretation material
+    bindings:
+    - object: revenue
+      kind: metric
+    - object: store_region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: rejected "per" opens nothing; revenue stays a metric outside, but the rejection is reported
+  rules_used:
+  - 4
+  - 5
+  - 6
+  - 9
+  - 10
+  - Output
+- id: N02
+  model: J
+  question: revenue by sales zone and month
+  choose:
+  - sale zone and=sales_zone
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: and
+      reason: rejected interpretation material
+    bindings:
+    - object: order_date
+      kind: time_dimension
+    - object: revenue
+      kind: metric
+    - object: sales_zone
+      kind: dimension
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: span id uses normalized words ("sale"); rejected "and" is UNRESOLVED; month remains a grain
+  rules_used:
+  - 1
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - 10
+  - Output
+- id: N03
+  model: J
+  question: revenue by sales zone and month
+  choose:
+  - sales zone and=sales_zone
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: sales zone and=sales_zone'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: 'exact-string ids: the unnormalized text is not the id'
+  rules_used:
+  - 1
+  - 10
+  - Output
+- id: N04
+  model: H
+  question: net loss or region or region
+  choose:
+  - net loss or=net_loss
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: or
+      reason: rejected interpretation material
+    - word: or
+      reason: disjunction
+    bindings:
+    - object: net_loss
+      kind: metric
+    - object: region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: same word, two reasons; order shown is question order (A2-7)
+  rules_used:
+  - 2
+  - 4
+  - 7
+  - 9
+  - 10
+  - Output
+- id: N05
+  model: T2
+  question: revenue by cost center day and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: cost center day
+      reason: overlapping phrases
+      candidates:
+      - value: center_period
+        kind: dimension
+        description: ''
+      - value: cost_center
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: order_date
+      kind: time_dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: '"day" is span material, so only one grain (month): no @grain'
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: N06
+  model: T2
+  question: revenue by cost center day and month
+  choose:
+  - cost center day=cost_center
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: day
+      reason: rejected interpretation material
+    bindings:
+    - object: cost_center
+      kind: dimension
+    - object: order_date
+      kind: time_dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: rejected grain word never becomes a grain; no @grain is created
+  rules_used:
+  - 4
+  - 8
+  - 9
+  - 10
+  - Output
+- id: N07
+  model: T2
+  question: revenue by cost center day and month
+  choose:
+  - cost center day=cost_center
+  - '@grain=day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @grain=day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: stage-2 @grain does not exist after the stage-1 pick
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: N08
+  model: DS
+  question: total credits by usage day and billing period
+  choose:
+  - billing period=billing_date
+  - '@date=usage_day'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id014
+      dimension: usage_day
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: ds
+      table: t_ds
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id014
+    query_hash: sha256:d8e68946727cfe9b1dc08bf115e8e52d162a881ac016c84e955e9348ff9456f8
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: stage-2 pick valid only because of the stage-1 pick; billing_date pick binding absent from bindings
+  rules_used:
+  - 4
+  - 8
+  - 10
+  - 11
+  - Output
+- id: N09
+  model: D2
+  question: total credits by billing and ship and month
+  choose:
+  - ship=ship_mode
+  - '@date=usage_day'
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: billing
+      reason: several objects
+      candidates:
+      - value: billing_account
+        kind: dimension
+        description: ''
+      - value: billing_date
+        kind: time_dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: ship_mode
+      kind: dimension
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: '@date valid at stage 2 (none named); billing still open'
+  rules_used:
+  - 7
+  - 8
+  - 9
+  - 10
+  - Output
+- id: N10
+  model: D2
+  question: total credits by billing and ship and month
+  choose:
+  - billing=billing_date
+  - ship=ship_mode
+  - '@date=usage_day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date=usage_day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: 'the accumulated call after N09: the earlier @date answer becomes an unknown id (B2-1)'
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: N11
+  model: D3
+  question: total credits by usage day and billing date and ship
+  choose:
+  - '@date=ship_date'
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: @date=ship_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: N12
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=row_count
+  - nosuch=row_count
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: compute=row_count'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 10
+  - Output
+- id: N13
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=total_credits_used_compute
+  - compute=avg_credits_used_compute
+  - bad
+  expected:
+    status: E_BAD_CHOICE
+    reason: malformed
+    stderr: 'E_BAD_CHOICE: malformed: bad'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: malformed precedes conflicting values
+  rules_used:
+  - 10
+  - Output
+- id: N14
+  model: D
+  question: total credits by billing and month
+  choose:
+  - '@date=nosuch'
+  - billing:9=billing_date
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: billing:9=billing_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: stage-1 failure wins over an earlier-argument stage-2 failure
+  rules_used:
+  - 10
+  - Output
+- id: N15
+  model: two
+  question: total credits used by month
+  choose:
+  - '@date=billing_date'
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id015
+      dimension: billing_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id015
+    query_hash: sha256:12d7382e71cdd41d2d82a121844492987135d90ad30dee02f56330296a0da1a9
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 8
+  - 10
+  - 11
+  - Output
+- id: N16
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=total_credits_used_compute
+  - compute=total_credits_used_compute
+  - compute=avg_credits_used_compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: conflicting values
+    stderr: 'E_BAD_CHOICE: conflicting values: compute=total_credits_used_compute; compute=avg_credits_used_compute'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-4
+  origin: r2-new
+  rules_used:
+  - 10
+  - Output
+- id: N17
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=total_credits_used_compute
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used_compute
+    dimensions:
+    - warehouse_name
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used_compute
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used_compute
+      dimensions:
+      - warehouse_name
+    query_hash: sha256:53f03607799918a5a646d6ca149b66c49514582051c8467c1444ecc4df52c938
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 7
+  - 10
+  - 11
+  - Output
+- id: N18
+  model: two
+  question: total credits used by billing date and usage day
+  choose:
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id016
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id016
+    query_hash: sha256:d9e0bde42017b37d2a6c581e2ab2e89291b1740622d9cd19200ceee7c10538d1
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 4
+  - 8
+  - 10
+  - Output
+- id: N19
+  model: two
+  question: total credits used by month
+  choose:
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id017
+      dimension: billing_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id017
+    query_hash: sha256:12d7382e71cdd41d2d82a121844492987135d90ad30dee02f56330296a0da1a9
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: only the metric binding is asserted; the month grain binding (via grain) is pre-existing and not at issue
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: N20
+  model: iww
+  question: total credits used by day and month
+  choose:
+  - '@grain=month'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id018
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id018
+    query_hash: sha256:a556b5533124ce0815a00163a320e402caf1b9b8ee1de4d1682eeefc51b4718e
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: 'SemanticQuery is one-valued; bindings are not: does the "day" grain binding stay (only dates are said to leave bindings) or go (by analogy),
+    and is "month" via grain or via pick?'
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: N21
+  model: rv4
+  question: warehouse and warehouse by warehouse
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse:1
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:3
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:5
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: 1 and 3 match each other but not 5 -> all three get :n
+  rules_used:
+  - 5
+  - 7
+  - 9
+  - Output
+- id: N22
+  model: rv4
+  question: warehouse and warehouse by warehouse
+  choose:
+  - warehouse:1=warehouse_name
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse:3
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:5
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    unresolved: []
+    bindings:
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 7
+  - 9
+  - 10
+  - Output
+- id: N23
+  model: C4
+  question: gold red blue green and red blue green
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: red blue green
+      reason: overlapping phrases
+      candidates:
+      - value: alpha
+        kind: metric
+        description: ''
+      - value: beta
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: gamma
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - Output
+- id: N24
+  model: K2
+  question: beta by red blue green
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: red blue
+      reason: metric in grouping position
+    - word: blue green
+      reason: metric in grouping position
+    bindings:
+    - object: beta
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 4
+  - 5
+  - 6
+  - 9
+  - Output
+- id: N25
+  model: K
+  question: beta by red blue green gold
+  choose:
+  - red blue green gold=alpha
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: red blue
+      reason: metric in grouping position
+    - word: green gold
+      reason: metric in grouping position
+    bindings:
+    - object: beta
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 4
+  - 6
+  - 9
+  - 10
+  - Output
+- id: N26
+  model: K
+  question: beta by red blue green gold
+  choose:
+  - red blue green gold=beta
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: red
+      reason: rejected interpretation material
+    - word: gold
+      reason: rejected interpretation material
+    bindings:
+    - object: beta
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 4
+  - 9
+  - 10
+  - Output
+- id: N27
+  model: N
+  question: revenue by region and day and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@grain'
+      reason: several grains named
+      candidates:
+      - value: day
+        kind: grain
+        description: ''
+      - value: month
+        kind: grain
+        description: ''
+    unresolved:
+    - word: day
+      reason: model has no date
+    bindings:
+    - object: region
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 7
+  - 8
+  - 9
+  - Output
+- id: N28
+  model: N
+  question: revenue by region and day and month
+  choose:
+  - '@grain=month'
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: day
+      reason: model has no date
+    bindings:
+    - object: region
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: N29
+  model: rv1
+  question: finance total sales by customer region manager
+  choose:
+  - customer region manager=region_manager
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - 10
+  - Output
+- id: N30
+  model: rv1
+  question: customer region manager and customer region manager
+  choose:
+  - customer region manager=region_manager
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: customer
+      reason: rejected interpretation material
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: shared span id; one entry per rejected occurrence
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - 10
+  - Output
+- id: N31
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_account
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions:
+    - billing_account
+    time: &id019
+      dimension: billing_date
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_account
+      kind: dimension
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits
+      kind: metric
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions:
+      - billing_account
+      time: *id019
+    query_hash: sha256:377e65902140f741a816560b31deb3173a9e5ce3f5ff147974bc0f199fe7e787
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 8
+  - 10
+  - 11
+  - Output
+- id: N32
+  model: D
+  question: total credits by usage day and billing
+  choose:
+  - '@date=usage_day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date=usage_day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  note: no stage-1 pick -> stage-2 basis is the zero-pick resolution, which has no @date
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: N33
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=total=x
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: compute=total=x'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 10
+  - Output
+- id: N34
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - '@foo=x'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @foo=x'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r2-new
+  rules_used:
+  - 10
+  - Output
+- id: M01
+  model: iww
+  question: total credits used by month
+  choose: []
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id020
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id020
+    query_hash: sha256:a556b5533124ce0815a00163a320e402caf1b9b8ee1de4d1682eeefc51b4718e
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'sole time dimension: binding or not (A3-2)'
+  rules_used:
+  - 8
+  - Output
+- id: M02
+  model: iww
+  question: usage day total credits used
+  choose: []
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id021
+      dimension: usage_day
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id021
+    query_hash: sha256:23cf5608a684df5a5bef7d089d84244d76c3eac4d1d276ee29705a1ce91e5581
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'named date, no grain word: default-grain binding (A3-2)'
+  rules_used:
+  - 4
+  - 8
+  - Output
+- id: M03
+  model: two
+  question: total credits used by billing date and month and day
+  choose:
+  - '@grain=day'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id022
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id022
+    query_hash: sha256:d9e0bde42017b37d2a6c581e2ab2e89291b1740622d9cd19200ceee7c10538d1
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: '@grain removes the month grain binding'
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: M04
+  model: two
+  question: total credits used by usage day and billing date and month
+  choose:
+  - '@date=usage_day'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id023
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id023
+    query_hash: sha256:a556b5533124ce0815a00163a320e402caf1b9b8ee1de4d1682eeefc51b4718e
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: '@date removes the billing_date phrase binding; usage_day keeps via phrase'
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: M05
+  model: N
+  question: revenue for month by region and day
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: month
+      reason: time grain outside grouping phrase
+    - word: day
+      reason: model has no date
+    bindings:
+    - object: region
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: day
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'model has no date: which "first grain word" (A3-6); tie at position 3 if lexical'
+  rules_used:
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: M06
+  model: N2
+  question: revenue by day of week and month
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: month
+      reason: model has no date
+    bindings:
+    - object: day_of_week
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'model has no date: a grain word consumed inside a phrase (A3-6)'
+  rules_used:
+  - 4
+  - 8
+  - 9
+  - Output
+- id: M07
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - =total_credits_used_compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: malformed
+    stderr: 'E_BAD_CHOICE: malformed: =total_credits_used_compute'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: empty id -> malformed
+  rules_used:
+  - 10
+  - Output
+- id: M08
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=
+  expected:
+    status: E_BAD_CHOICE
+    reason: malformed
+    stderr: 'E_BAD_CHOICE: malformed: compute='
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: empty value -> malformed
+  rules_used:
+  - 10
+  - Output
+- id: M09
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute==total_credits_used_compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: compute==total_credits_used_compute'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'split at first "=": value "=total_credits_used_compute"'
+  rules_used:
+  - 10
+  - Output
+- id: M10
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=avg_credits_used_compute
+  - compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: malformed
+    stderr: 'E_BAD_CHOICE: malformed: compute'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: malformed is checked over all arguments first
+  rules_used:
+  - 10
+  - Output
+- id: M11
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - nosuch=x
+  - compute=avg_credits_used_compute
+  - compute=total_credits_used_compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: conflicting values
+    stderr: 'E_BAD_CHOICE: conflicting values: compute=avg_credits_used_compute; compute=total_credits_used_compute'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: conflicting values before unknown id
+  rules_used:
+  - 10
+  - Output
+- id: M12
+  model: two
+  question: total credits used by month
+  choose:
+  - '@Date=billing_date'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @Date=billing_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: exact-string @ id; any other @ id is stage-2 unknown id
+  rules_used:
+  - 10
+  - Output
+- id: M13
+  model: two
+  question: total credits used by month
+  choose:
+  - '@date:1=billing_date'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date:1=billing_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: '@date:n is not an id'
+  rules_used:
+  - 10
+  - Output
+- id: M14
+  model: D
+  question: total credits by billing and month
+  choose:
+  - '@date=usage_day'
+  - billing=nosuch
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: billing=nosuch'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: stage-1 arguments are checked before stage-2 regardless of argument order
+  rules_used:
+  - 10
+  - Output
+- id: M15
+  model: D
+  question: total credits by billing and month
+  choose:
+  - '@grain=month'
+  - billing=billing_account
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @grain=month'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: '@grain is not an ambiguity (one grain)'
+  rules_used:
+  - 8
+  - 10
+  - Output
+- id: M16
+  model: D
+  question: total credits by billing and month
+  choose:
+  - billing=billing_account
+  - '@date=ship_date'
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: @date=ship_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: stage-2 value outside candidates
+  rules_used:
+  - 10
+  - Output
+- id: M17
+  model: C4
+  question: gold red blue green and red blue green by red blue green
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: red blue green:6
+      reason: overlapping phrases
+      candidates:
+      - value: alpha
+        kind: metric
+        description: ''
+      - value: beta
+        kind: dimension
+        description: ''
+    - id: red blue green:10
+      reason: overlapping phrases
+      candidates:
+      - value: alpha
+        kind: metric
+        description: ''
+      - value: beta
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: gamma
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: ambiguous-only span counting; positions differ -> :n ids; bound text at 2-4 ignored
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - Output
+- id: M18
+  model: C4
+  question: gold red blue green and red blue green and red blue green
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: red blue green
+      reason: overlapping phrases
+      candidates:
+      - value: alpha
+        kind: metric
+        description: ''
+      - value: beta
+        kind: dimension
+        description: ''
+    unresolved: []
+    bindings:
+    - object: gamma
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: two ambiguous spans, same class -> shared id
+  rules_used:
+  - 4
+  - 7
+  - Output
+- id: M19
+  model: C4
+  question: gold red blue green and red blue green and red blue green
+  choose:
+  - red blue green=alpha
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: green
+      reason: rejected interpretation material
+    - word: green
+      reason: rejected interpretation material
+    bindings:
+    - object: alpha
+      kind: metric
+    - object: gamma
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'shared span pick: bindings per match, one rejected entry per occurrence'
+  rules_used:
+  - 4
+  - 7
+  - 9
+  - 10
+  - Output
+- id: M20
+  model: iww
+  question: warehouse name by total credits used
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: total credit used
+      reason: metric in grouping position
+    bindings:
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'normative row 15: is the refused metric in bindings? (A3-4)'
+  rules_used:
+  - 4
+  - 5
+  - 6
+  - Output
+- id: M21
+  model: iww
+  question: total credits used by month and warehouse
+  choose: []
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions:
+    - warehouse_name
+    time: &id024
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    - object: warehouse_name
+      kind: dimension
+    grain: month
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions:
+      - warehouse_name
+      time: *id024
+    query_hash: sha256:0f7ee4f319d123bf729c348d5a4d3367e99990b45f2acf755b8d61e44700c13a
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'bindings order: question order vs rule order (A3-3)'
+  rules_used:
+  - 4
+  - 7
+  - 8
+  - Output
+- id: M22
+  model: two
+  question: billing date by billing date and usage day
+  choose:
+  - '@date=billing_date'
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: null
+      reason: no metric or dimension
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    grain: day
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: value bound twice keeps both bindings; no metric/dimension
+  rules_used:
+  - 4
+  - 8
+  - 9
+  - 10
+  - Output
+- id: M23
+  model: rv4
+  question: by warehouse and warehouse and warehouse
+  choose:
+  - warehouse=warehouse_size
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics: []
+    dimensions:
+    - warehouse_size
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: warehouse_size
+      kind: dimension
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv4
+      table: warehouse_usage
+      metrics: []
+      dimensions:
+      - warehouse_size
+    query_hash: sha256:a4a6f90beac8b796373128727f5b543def68130696cc9dc213a09c7bbeecd75a
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r3-new
+  note: 'one pick binds three occurrences: three bindings or one (A3-3)'
+  rules_used:
+  - 7
+  - 10
+  - Output
+- id: Q01
+  model: two
+  question: total credits used by billing date and usage day
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: Column "billing_date" (VARCHAR)
+      - value: usage_day
+        kind: time_dimension
+        description: Column "usage_day" (VARCHAR)
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-2
+  origin: r4-new
+  note: 'row 24: no settled date; is grain "day" settled? (A4-2)'
+  rules_used:
+  - 8
+  - 9
+  - Output
+- id: Q02
+  model: iww
+  question: total credits used by day and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@grain'
+      reason: several grains named
+      candidates:
+      - value: day
+        kind: grain
+        description: ''
+      - value: month
+        kind: grain
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: '@grain pending; the sole date is settled by rule 8 -> in bindings; grain null'
+  rules_used:
+  - 8
+  - 9
+  - Output
+- id: Q03
+  model: two
+  question: total credits used by day and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@grain'
+      reason: several grains named
+      candidates:
+      - value: day
+        kind: grain
+        description: ''
+      - value: month
+        kind: grain
+        description: ''
+    - id: '@date'
+      reason: several eligible dates, none named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: Column "billing_date" (VARCHAR)
+      - value: usage_day
+        kind: time_dimension
+        description: Column "usage_day" (VARCHAR)
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: '@grain and @date pending: no time dimension, grain null'
+  rules_used:
+  - 8
+  - 9
+  - Output
+- id: Q04
+  model: N
+  question: revenue by region and month
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: month
+      reason: model has no date
+    bindings:
+    - object: region
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: 'grain word with no date: grain "month", no time dimension'
+  rules_used:
+  - 8
+  - 9
+  - Output
+- id: Q05
+  model: iww
+  question: total credits used by total credits used
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: total credit used
+      reason: metric in grouping position
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-1
+  origin: r4-new
+  note: same metric bound outside and refused inside (A4-1)
+  rules_used:
+  - 4
+  - 5
+  - 6
+  - 9
+  - Output
+- id: Q06
+  model: iww
+  question: total credits used by usage day for the month
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: month
+      reason: time grain outside grouping phrase
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-3
+  origin: r4-new
+  note: named date, the only grain word is outside the grouping phrase (A4-3)
+  rules_used:
+  - 4
+  - 5
+  - 7
+  - 8
+  - 9
+  - Output
+- id: Q07
+  model: two
+  question: total credits used by month
+  choose:
+  - '@grain=month'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @grain=month'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: stderr for a stage-2 unknown id
+  rules_used:
+  - 10
+- id: Q08
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - x
+  - =y
+  - compute=total_credits_used_compute
+  expected:
+    status: E_BAD_CHOICE
+    reason: malformed
+    stderr: 'E_BAD_CHOICE: malformed: x'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: 'several malformed: the first, verbatim'
+  rules_used:
+  - 10
+- id: Q09
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - a=1
+  - b=1
+  - b=2
+  - a=2
+  expected:
+    status: E_BAD_CHOICE
+    reason: conflicting values
+    stderr: 'E_BAD_CHOICE: conflicting values: a=1; a=2'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-4
+  origin: r4-new
+  note: 'two conflicting ids: which is named (A4-4)'
+  rules_used:
+  - 10
+- id: Q10
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=row_count
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: compute=row_count'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: stderr for not a shown candidate
+  rules_used:
+  - 10
+- id: Q11
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute==x
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: compute==x'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: stderr when the value contains "="
+  rules_used:
+  - 10
+- id: Q12
+  model: tie
+  question: spend by spend
+  choose:
+  - spend:1=total_credits_used
+  - spend:3=total_credits_used
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: spend
+      reason: metric in grouping position
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5:
+  - A4-1
+  origin: r4-new
+  note: picked metric unrefused outside, refused inside (A4-1)
+  rules_used:
+  - 4
+  - 6
+  - 9
+  - 10
+  - Output
+- id: Q13
+  model: two
+  question: total credits used by billing date and usage day and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: Column "billing_date" (VARCHAR)
+      - value: usage_day
+        kind: time_dimension
+        description: Column "usage_day" (VARCHAR)
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: '@date pending with one grain word: grain settled, date not'
+  rules_used:
+  - 8
+  - 9
+  - Output
+- id: Q14
+  model: D
+  question: total credits by usage day and billing
+  choose:
+  - billing=billing_account
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions:
+    - billing_account
+    time: &id025
+      dimension: usage_day
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_account
+      kind: dimension
+    - object: total_credits
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: d
+      table: t_d
+      metrics:
+      - total_credits
+      dimensions:
+      - billing_account
+      time: *id025
+    query_hash: sha256:a120c57147de1bd8fe5fa608bc2efcf69ca57f978aa1f0dea99b8742d9367bb2
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: pick settles; date usage_day with day default
+  rules_used:
+  - 7
+  - 8
+  - 10
+  - Output
+- id: Q15
+  model: N
+  question: revenue by region and day and month
+  choose:
+  - '@grain=month'
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: day
+      reason: model has no date
+    bindings:
+    - object: region
+      kind: dimension
+    - object: revenue
+      kind: metric
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  changed_from_r4: false
+  r4_alternatives_settled_by_r5: null
+  origin: r4-new
+  note: '@grain settles a grain with no date (UNRESOLVED model has no date)'
+  rules_used:
+  - 8
+  - 9
+  - 10
+  - Output
+- id: Q16
+  model: iww
+  sequence:
+  - question: how much compute by warehouse
+    choose:
+    - compute=total_credits_used_compute
+    expected: &id026
+      exit: 0
+      out_resolution_json: written (RESOLVED)
+  - question: how much compute by warehouse
+    choose:
+    - compute=row_count
+    expected: &id027
+      exit: 2
+      stdout: ''
+      stderr: 'E_BAD_CHOICE: not a shown candidate: compute=row_count'
+      out_resolution_json: removed (the RESOLVED file from call 1 no longer exists)
+  expected_sequence:
+  - *id026
+  - *id027
+  origin: r4-new
+  note: exit-2 file removal across calls (sequence)
+- id: ROW36
+  model: rv1
+  question: region by region
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: region:1
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    - id: region:3
+      reason: phrase shared by several objects
+      candidates:
+      - value: region
+        kind: dimension
+        description: Test object region
+      - value: region_total
+        kind: metric
+        description: Test metric region_total
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: n/a
+  rules_used:
+  - table
+- id: ROW37
+  model: rv1
+  question: region by region
+  choose:
+  - region:1=region_total
+  - region:3=region
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - region_total
+    dimensions:
+    - region
+    time: null
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: region
+      kind: dimension
+    - object: region_total
+      kind: metric
+    grain: null
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv1
+      table: orders
+      metrics:
+      - region_total
+      dimensions:
+      - region
+    query_hash: sha256:2334b20e28d4d1d8df215f901af2bca628415d3511990eac812a9d0627476784
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: n/a
+  rules_used:
+  - table
+- id: ROW38
+  model: rv1
+  question: orders by region
+  choose:
+  - region=region_total
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: region
+      reason: metric in grouping position
+    bindings:
+    - object: order_count
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW39
+  model: rv4
+  question: warehouse and warehouse by warehouse
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: warehouse:1
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:3
+      reason: metric and dimension
+      candidates:
+      - value: distinct_warehouse_name
+        kind: metric
+        description: Test metric distinct_warehouse_name
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    - id: warehouse:5
+      reason: several objects
+      candidates:
+      - value: warehouse_name
+        kind: dimension
+        description: Test object warehouse_name
+      - value: warehouse_size
+        kind: dimension
+        description: Test object warehouse_size
+    unresolved: []
+    bindings: []
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: n/a
+  rules_used:
+  - table
+- id: ROW40
+  model: rv1
+  question: finance total sales by customer region manager
+  choose:
+  - customer region manager=region_manager
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW41
+  model: rv1
+  question: total sales by customer region manager and customer
+  choose:
+  - customer region manager=region_manager
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: customer
+      reason: several objects
+      candidates:
+      - value: customer_name
+        kind: dimension
+        description: Test object customer_name
+      - value: customer_region
+        kind: dimension
+        description: Test object customer_region
+    unresolved:
+    - word: customer
+      reason: rejected interpretation material
+    bindings:
+    - object: region_manager
+      kind: dimension
+    - object: total_sales
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW42
+  model: rv6
+  question: store region by revenue
+  choose:
+  - store region by=store_region
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: by
+      reason: rejected interpretation material
+    bindings:
+    - object: revenue
+      kind: metric
+    - object: store_region
+      kind: dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+  note: 'D417: model is the committed fixture tests/fixtures/semantic/rv6.yaml'
+- id: ROW43
+  model: rv5
+  question: total credits by usage day and billing
+  choose:
+  - billing=billing_date
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits
+    dimensions: []
+    time: &id028
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: rv5
+      table: credit_usage
+      metrics:
+      - total_credits
+      dimensions: []
+      time: *id028
+    query_hash: sha256:b8671bd94339b460b4bdd0655b6282bd14bc54fb274b6f95b429a6f92c00ee7b
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: n/a
+  rules_used:
+  - table
+  note: 'D417: model is the committed fixture tests/fixtures/semantic/rv5.yaml'
+- id: ROW44
+  model: rv5
+  question: total credits by billing and month
+  choose:
+  - billing=billing_date
+  - '@date=billing_date'
+  expected:
+    status: E_BAD_CHOICE
+    reason: unknown id
+    stderr: 'E_BAD_CHOICE: unknown id: @date=billing_date'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+  note: 'D417: model is the committed fixture tests/fixtures/semantic/rv5.yaml'
+- id: ROW45
+  model: two
+  question: total credits used by billing date and usage day
+  choose:
+  - '@date=billing_date'
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time: &id029
+      dimension: billing_date
+      grain: day
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: billing_date
+      kind: time_dimension
+    - object: total_credits_used
+      kind: metric
+    grain: day
+    equality_holds: true
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time: *id029
+    query_hash: sha256:d9e0bde42017b37d2a6c581e2ab2e89291b1740622d9cd19200ceee7c10538d1
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW46
+  model: iww
+  question: total credits used by day and month
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@grain'
+      reason: several grains named
+      candidates:
+      - value: day
+        kind: grain
+        description: ''
+      - value: month
+        kind: grain
+        description: ''
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW47
+  model: iww
+  question: how much compute by warehouse
+  choose:
+  - compute=row_count
+  - nosuch=row_count
+  expected:
+    status: E_BAD_CHOICE
+    reason: not a shown candidate
+    stderr: 'E_BAD_CHOICE: not a shown candidate: compute=row_count'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW48
+  model: two
+  question: total credits used by month
+  choose:
+  - '@date=billing_date'
+  - '@date=usage_day'
+  expected:
+    status: E_BAD_CHOICE
+    reason: conflicting values
+    stderr: 'E_BAD_CHOICE: conflicting values: @date=billing_date; @date=usage_day'
+    stdout: ''
+    out_resolution_json: removed
+    exit: 2
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW49
+  model: iww
+  question: total credits used by total credits used
+  choose: []
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: total credit used
+      reason: metric in grouping position
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: ROW50
+  model: two
+  question: total credits used by billing date and usage day
+  choose: []
+  expected:
+    status: AMBIGUOUS
+    exit: 5
+    ambiguities:
+    - id: '@date'
+      reason: several dates named
+      candidates:
+      - value: billing_date
+        kind: time_dimension
+        description: Column "billing_date" (VARCHAR)
+      - value: usage_day
+        kind: time_dimension
+        description: Column "usage_day" (VARCHAR)
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    grain: null
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query: null
+  origin: normative row (r5)
+  table_result_matches: true
+  full_output_paragraph_matches: true
+  rules_used:
+  - table
+- id: AMD1
+  model: iww
+  question: total credits used by month and month
+  choose: []
+  origin: D417 owner amendment
+  expected:
+    status: RESOLVED
+    exit: 0
+    metrics:
+    - total_credits_used
+    dimensions: []
+    time:
+      dimension: usage_day
+      grain: month
+    ambiguities: []
+    unresolved: []
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: usage_day
+      kind: time_dimension
+    grain: month
+    out_resolution_json: written (same bytes as stdout)
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: idle_warehouse_waste
+      table: warehouse_metering_history
+      metrics:
+      - total_credits_used
+      dimensions: []
+      time:
+        dimension: usage_day
+        grain: month
+    query_hash: sha256:a556b5533124ce0815a00163a320e402caf1b9b8ee1de4d1682eeefc51b4718e
+- id: AMD2
+  model: iww
+  origin: D417 owner amendment
+  note: failure removes a pre-existing valid result (per-step model override)
+  sequence:
+  - question: total credits used by warehouse name
+    choose: []
+    expected:
+      exit: 0
+      out_resolution_json: written (RESOLVED)
+  - model: nosuch
+    question: total credits used by warehouse name
+    choose: []
+    expected:
+      exit: 2
+      stdout: ''
+      stderr_last_line_prefix: E_MODEL_NOT_FOUND
+      out_resolution_json: removed (the RESOLVED file from call 1 no longer exists)
+- id: AMD3
+  model: iww
+  question: finance total credits used by warehouse name finance
+  choose: []
+  origin: D417 owner amendment (B-116)
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    - word: finance
+      reason: no matching name or synonym
+    bindings:
+    - object: total_credits_used
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    semantic_query: null
+    query_hash: null
+    out_resolution_json: written (same bytes as stdout)
+- id: AMD4
+  model: iww
+  question: row count by total credits used and total credits used
+  choose: []
+  origin: D417 owner amendment (B-117)
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: total credit used
+      reason: metric in grouping position
+    - word: total credit used
+      reason: metric in grouping position
+    bindings:
+    - object: row_count
+      kind: metric
+    grain: null
+    semantic_query: null
+    query_hash: null
+    out_resolution_json: written (same bytes as stdout)
+- id: AMD5
+  model: iww
+  question: total credits used by warehouse for finance
+  choose: []
+  origin: D421 owner amendment
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    bindings: &id030
+    - object: total_credits_used
+      kind: metric
+    - object: warehouse_name
+      kind: dimension
+    grain: null
+    semantic_query: null
+    query_hash: null
+    out_resolution_json: written (same bytes as stdout)
+- id: AMD6
+  model: iww
+  question: total credits used by warehouse for ｆｉｎａｎｃｅ
+  choose: []
+  origin: D421 owner amendment
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: finance
+      reason: no matching name or synonym
+    bindings: *id030
+    grain: null
+    semantic_query: null
+    query_hash: null
+    out_resolution_json: written (same bytes as stdout)
+- id: AMD7
+  model: iww
+  question: total credits used by warehouse для финансов
+  choose: []
+  origin: D421 owner amendment
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: для
+      reason: no matching name or synonym
+    - word: финансов
+      reason: no matching name or synonym
+    bindings: *id030
+    grain: null
+    semantic_query: null
+    query_hash: null
+    out_resolution_json: written (same bytes as stdout)
+- id: AMD8
+  model: iww
+  question: total credits used by warehouse 仅财务
+  choose: []
+  origin: D421 owner amendment
+  expected:
+    status: UNRESOLVED
+    exit: 6
+    ambiguities: []
+    unresolved:
+    - word: 仅财务
+      reason: no matching name or synonym
+    bindings: *id030
+    grain: null
+    semantic_query: null
+    query_hash: null
+    out_resolution_json: written (same bytes as stdout)

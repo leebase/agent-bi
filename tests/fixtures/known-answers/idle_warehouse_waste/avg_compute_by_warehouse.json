@@ -1,0 +1,49 @@
+{
+  "name": "avg_compute_by_warehouse",
+  "query_hash": "sha256:65e0207ca91cef94d1011b7fe50a71fd95752cd3b7a37e0fa744c3e49596e12e",
+  "semantic_digest": "sha256:0e0e506386c467022c9a8beaa6146b6af6583a4a4cc43bca3d6aeda451337f82",
+  "definition_digests": {
+    "base_table": "sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672",
+    "avg_credits_used_compute": "sha256:b42b856c21ed70151d9d22cb5f6dfbb901c3095042ab6641363a0e0ae66fdc21",
+    "warehouse_name": "sha256:65125159377db5d34112370b2829c7af7ca906cc49b3cf844545e97969ff8367"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "avg_credits_used_compute"
+    ],
+    "dimensions": [
+      "warehouse_name"
+    ],
+    "filters": [],
+    "named_filters": [],
+    "order_by": []
+  },
+  "expected": {
+    "columns": [
+      "warehouse_name",
+      "avg_credits_used_compute"
+    ],
+    "rows": [
+      [
+        "FINANCE_REPORTING_WH",
+        375.63428571428574
+      ],
+      [
+        "MARKETING_ADHOC_WH",
+        149.89714285714285
+      ],
+      [
+        "CORE_ELT_WH",
+        74.60571428571428
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT warehouse_name, AVG(credits_used_compute) AS avg_credits_used_compute FROM warehouse_metering_history GROUP BY warehouse_name ORDER BY avg_credits_used_compute DESC, warehouse_name ASC",
+  "expected_sql_by": "sprint-0 implementer",
+  "expected_at": "2026-10-14T20:55:19Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

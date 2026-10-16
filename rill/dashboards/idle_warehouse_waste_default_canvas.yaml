@@ -1,0 +1,65 @@
+# agent-bi: generated from semantic/idle_warehouse_waste.yaml — do not edit; edit the semantic model and re-run compile-rill
+type: canvas
+display_name: idle_warehouse_waste
+defaults:
+  time_range: inf
+rows:
+  - items:
+      - kpi_grid:
+          metrics_view: idle_warehouse_waste
+          measures:
+            - row_count
+        width: 3
+      - kpi_grid:
+          metrics_view: idle_warehouse_waste
+          measures:
+            - total_credits_used_compute
+        width: 3
+      - kpi_grid:
+          metrics_view: idle_warehouse_waste
+          measures:
+            - avg_credits_used_compute
+        width: 3
+      - kpi_grid:
+          metrics_view: idle_warehouse_waste
+          measures:
+            - total_credits_used_cloud_services
+        width: 3
+    height: 128px
+  - items:
+      - line_chart:
+          metrics_view: idle_warehouse_waste
+          x:
+            field: usage_day
+            type: temporal
+          y:
+            field: row_count
+            type: quantitative
+        width: 12
+    height: 320px
+  - items:
+      - bar_chart:
+          metrics_view: idle_warehouse_waste
+          x:
+            field: warehouse_name
+            type: nominal
+          y:
+            field: row_count
+            type: quantitative
+        width: 6
+    height: 320px
+  - items:
+      - table:
+          metrics_view: idle_warehouse_waste
+          columns:
+            - warehouse_name
+            - row_count
+            - total_credits_used_compute
+            - avg_credits_used_compute
+            - total_credits_used_cloud_services
+            - avg_credits_used_cloud_services
+            - total_credits_used
+            - avg_credits_used
+            - distinct_warehouse_name
+        width: 12
+    height: 400px

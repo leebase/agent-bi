@@ -1,0 +1,1 @@
+SELECT warehouse_name, total_credits_used FROM idle_warehouse_waste ORDER BY total_credits_used DESC, warehouse_name ASC LIMIT 1000

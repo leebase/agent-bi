@@ -1,0 +1,30 @@
+schema_version: agent-bi-config/1.0
+project: agent-bi
+engines:
+  duckdb:
+    database: ":memory:"                 # or a .duckdb path
+    attach:
+      - {path: tests/fixtures/idle-warehouse-waste.sqlite, alias: fixture, type: sqlite}
+      - {path: tests/fixtures/holiday-cookout-rush.sqlite, alias: fixture2, type: sqlite}
+    relation_map:                        # semantic base_table (DATABASE.SCHEMA) -> duckdb catalog.schema (DuckDB only)
+      "FIXTURE.MAIN": "fixture.main"
+      "FIXTURE2.MAIN": "fixture2.main"
+    session:                             # fixed; applied on connect and recorded in every receipt
+      TimeZone: UTC
+      threads: 1
+      preserve_insertion_order: true
+  snowflake:                             # all values may be ${ENV_VAR}; absent -> engine unavailable
+    account: ${AGENT_BI_SNOWFLAKE_ACCOUNT}
+    user: ${AGENT_BI_SNOWFLAKE_USER}
+    password: ${AGENT_BI_SNOWFLAKE_PASSWORD}
+    role: ${AGENT_BI_SNOWFLAKE_ROLE}
+    warehouse: ${AGENT_BI_SNOWFLAKE_WAREHOUSE}
+    semantic_view_schema: ${AGENT_BI_SNOWFLAKE_SEMANTIC_SCHEMA}
+    session:
+      WEEK_START: 1
+      TIMEZONE: UTC
+rill:
+  project_dir: rill
+  olap: duckdb
+defaults:
+  limit: 1000

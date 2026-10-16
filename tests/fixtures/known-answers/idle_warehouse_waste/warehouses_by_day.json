@@ -1,0 +1,68 @@
+{
+  "name": "warehouses_by_day",
+  "query_hash": "sha256:7fa7da60703adf91d9729097d0ec33a7acf2d741f0e0c60374ba1c208122964f",
+  "semantic_digest": "sha256:0c97025490e4268b7ac0c2d441e569d7f6ad9cde4b83b7b3746df53f8d360a7b",
+  "definition_digests": {
+    "base_table": "sha256:73b6f020316ab81640f7f24c56b4e47b2646992b515824a105a48b30ab126672",
+    "distinct_warehouse_name": "sha256:feb50effb4c549e18da29f12b6549a297996bf0cf8161f473cd42f156d32add7",
+    "usage_day": "sha256:c77d4ef8851c2ad227f93b0bef78b97e2f88e4abd9749be9254a390d5fd9b7f4"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "idle_warehouse_waste",
+    "table": "warehouse_metering_history",
+    "metrics": [
+      "distinct_warehouse_name"
+    ],
+    "dimensions": [],
+    "time": {
+      "dimension": "usage_day",
+      "grain": "day"
+    },
+    "filters": [],
+    "named_filters": [],
+    "order_by": [],
+    "limit": 1000
+  },
+  "expected": {
+    "columns": [
+      "time_bucket",
+      "distinct_warehouse_name"
+    ],
+    "rows": [
+      [
+        "2026-06-01",
+        3
+      ],
+      [
+        "2026-06-02",
+        3
+      ],
+      [
+        "2026-06-03",
+        3
+      ],
+      [
+        "2026-06-04",
+        3
+      ],
+      [
+        "2026-06-05",
+        3
+      ],
+      [
+        "2026-06-06",
+        3
+      ],
+      [
+        "2026-06-07",
+        3
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT date(usage_day) AS time_bucket, COUNT(DISTINCT warehouse_name) AS distinct_warehouse_name FROM warehouse_metering_history GROUP BY date(usage_day) ORDER BY time_bucket ASC, distinct_warehouse_name DESC",
+  "expected_sql_by": "sprint-4",
+  "expected_at": "2026-10-15T00:32:43Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

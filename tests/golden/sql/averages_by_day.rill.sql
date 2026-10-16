@@ -1,0 +1,1 @@
+SELECT date_trunc('DAY', usage_day) AS time_bucket, avg_credits_used, avg_credits_used_cloud_services FROM idle_warehouse_waste ORDER BY time_bucket ASC, avg_credits_used DESC, avg_credits_used_cloud_services DESC LIMIT 1000

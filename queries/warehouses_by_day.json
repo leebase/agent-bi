@@ -1,0 +1,26 @@
+{
+  "schema_version": "agent-bi-saved-query/1.0",
+  "name": "warehouses_by_day",
+  "status": "verified",
+  "question": "how many warehouses per day",
+  "question_normalized": "how many warehouses per day",
+  "query_hash": "sha256:7fa7da60703adf91d9729097d0ec33a7acf2d741f0e0c60374ba1c208122964f",
+  "semantic_digest": "sha256:0c97025490e4268b7ac0c2d441e569d7f6ad9cde4b83b7b3746df53f8d360a7b",
+  "semantic_query": {
+    "dimensions": [],
+    "filters": [],
+    "limit": 1000,
+    "metrics": [
+      "distinct_warehouse_name"
+    ],
+    "model": "idle_warehouse_waste",
+    "named_filters": [],
+    "order_by": [],
+    "schema_version": "semantic-query/1.0",
+    "table": "warehouse_metering_history",
+    "time": {
+      "dimension": "usage_day",
+      "grain": "day"
+    }
+  }
+}

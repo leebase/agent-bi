@@ -1,0 +1,46 @@
+name: rv5
+description: Sprint 4P frozen-contract resolver fixture rv5 (invented columns)
+tables:
+- name: credit_usage
+  description: Resolver fixture table credit_usage
+  base_table:
+    database: FIXTURE
+    schema: MAIN
+    table: credit_usage
+  dimensions:
+  - name: billing_account
+    synonyms: []
+    description: Test object billing_account
+    expr: '"billing_account"'
+    data_type: TEXT
+  - name: ship_mode
+    synonyms: []
+    description: Test object ship_mode
+    expr: '"ship_mode"'
+    data_type: TEXT
+  time_dimensions:
+  - name: usage_day
+    synonyms: []
+    description: Test object usage_day
+    expr: CAST("usage_day" AS DATE)
+    data_type: DATE
+  - name: billing_date
+    synonyms: []
+    description: Test object billing_date
+    expr: CAST("billing_date" AS DATE)
+    data_type: DATE
+  - name: ship_date
+    synonyms: []
+    description: Test object ship_date
+    expr: CAST("ship_date" AS DATE)
+    data_type: DATE
+  facts:
+  - name: credits
+    description: Column credits
+    expr: '"credits"'
+    data_type: NUMBER
+  metrics:
+  - name: total_credits
+    synonyms: []
+    description: Test metric total_credits
+    expr: SUM("credits")

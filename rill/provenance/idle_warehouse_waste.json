@@ -1,0 +1,31 @@
+{
+  "schema_version": "agent-bi-build-manifest/1.0",
+  "build_id": "20261015T003543Z",
+  "model": "idle_warehouse_waste",
+  "model_file_sha256": "sha256:cbce4de235259228f4486f40671c5bc1b48f862ae0d423feb87795eff5bee79c",
+  "sidecar_sha256": "sha256:25676438fab23ee1990e923afbf8b49014dabcc858a78e999086099577fc322a",
+  "models_digest": null,
+  "rill_schema_pin": "v0.90.5",
+  "files": [
+    {
+      "path": "rill/rill.yaml",
+      "sha256": "sha256:0e9e89ce7450c5393937a8698901fe49b9268714ce3d8e6f8bac519e767af012"
+    },
+    {
+      "path": "rill/models/idle_warehouse_waste.sql",
+      "sha256": "sha256:6cee41018086188981c465ed64ab5db7ed72ed3ead84af237aaa793f338265dd"
+    },
+    {
+      "path": "rill/metrics/idle_warehouse_waste.yaml",
+      "sha256": "sha256:05c8bb5d539f8fc225f20b81112fa00aa18f1fb9f9c4bb45b0dad81586c0d4e0"
+    },
+    {
+      "path": "rill/dashboards/idle_warehouse_waste_default_canvas.yaml",
+      "sha256": "sha256:717a861225f2c55941ea015e9f3a3e39cd2cfb25e9a40e2774d0b339cd90d64e"
+    },
+    {
+      "path": "rill/dashboards/idle_warehouse_waste_explore.yaml",
+      "sha256": "sha256:5aa448b3b8b6373d7e880a9ec1150a278648b07a66c2d9f01e547746707a7741"
+    }
+  ]
+}
