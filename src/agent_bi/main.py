@@ -190,11 +190,25 @@ def cmd_resolve(args: argparse.Namespace) -> int:
 
 def cmd_enrich(args: argparse.Namespace) -> int:
     if args.apply is not None:
-        raise validation_error("NOT_IMPLEMENTED", "`enrich --apply` is not implemented yet")
+        from agent_bi.semantic.patch import apply_patch
+
+        for path in apply_patch(
+            args.model, args.apply, args.allow_confirmed, _project_dir(args)
+        ):
+            print(f"wrote {path}")
+        return 0
     from agent_bi.semantic.enrich import accept
 
     print(accept(args.model, args.accept, args.by, _project_dir(args)))
     return 0
+
+
+def cmd_diff(args: argparse.Namespace) -> int:
+    from agent_bi.semantic.diff import run_diff
+
+    result = run_diff(args.model, args.engine, load_config(args.config), _project_dir(args))
+    print("\n".join(result.lines))
+    return result.exit_code
 
 
 def cmd_save(args: argparse.Namespace) -> int:
@@ -322,7 +336,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     _add(canvas_sub, "fork", "Copy the default canvas to an operator-owned canvas", cmd_canvas_fork, fork_args)
     _add(sub, "enrich", "Apply an enrichment patch or accept an entry", cmd_enrich, enrich_args)
-    _add(sub, "diff", "Report drift between the catalog and the model", ni("diff"), diff_args)
+    _add(sub, "diff", "Report drift between the catalog and the model", cmd_diff, diff_args)
     _add(
         sub, "contract", "Print the SemanticQuery contract", cmd_contract,
         lambda p: p.add_argument("--print", dest="print_", action="store_true"),

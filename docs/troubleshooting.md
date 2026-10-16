@@ -54,6 +54,43 @@ smart quotes, em dashes, accents and unsupported characters can lead to composit
 Use explicit metric and dimension names for the deterministic path. Unsupported text
 must not be silently discarded as if a qualifier were absent.
 
+## A patch is refused
+
+`enrich --apply` refuses the whole patch, writes nothing and names the failing operation.
+Common `E_PATCH_REJECTED` causes: a key named `sql` or `expected_sql` anywhere in the
+JSON; an `add_metric` expression outside the metric grammar or over a column the table
+does not have; a path that is not `tables[0].<kind>[<name>]`; a missing or wrong model; a
+non-UUID4 `patch_id`; a file over 1 MB; or an unknown key (every op value forbids extra
+keys). A name already owned by a non-metric object gives `E_NAME_COLLISION`, and a
+duplicate synonym gives `E_SYNONYM_NOT_UNIQUE`. Check the operation index in the message;
+the patch is atomic, so nothing from earlier operations was kept.
+
+## A confirmed entry blocks a patch
+
+An operation that rewrites an entry a person confirmed is refused with
+`E_PATCH_TOUCHES_CONFIRMED` unless `--allow-confirmed` names that exact leaf path. A
+parent path, wildcard or near match does not work. With the exact leaf the entry is
+rewritten, reverts to `inferred` and is attributed to the patch's `proposed_by`; any
+verified query whose referenced expression changed becomes stale. Re-accept it after
+independent re-verification.
+
+## A query went STALE after enrichment
+
+A changed metric expression invalidates the semantic digest of every query that
+references it. `verify` prints `STALE <name>: <changed definitions>` and exits 1, and
+`ask` labels the query `exploratory` with the reason. Re-running the old expected SQL is
+correctly refused (`E_VERIFY_MISMATCH`): write a corrected independent SQL against the
+new definition, then run `save --verify --force --by <person> --expected-sql "<SQL>"` on
+the same name. Description, synonym and status changes alone do not stale verification.
+
+## diff exits 1 but wrote nothing
+
+That is the contract: `diff` is a read-only preview of `scan --refresh`. Exit 1 means a
+structural change (columns or semantic objects) or accepted content that a refresh would
+break; exit 0 with a row-count line means the data moved but the structure did not.
+Resolve structural drift with `scan --refresh` or by editing the view/model, then
+re-check. `diff` never modifies the fixture, model, sidecar or outputs.
+
 ## Display and provenance details
 
 - The default canvas uses simple inferred KPIs and row counts; it is not a designed

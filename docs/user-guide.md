@@ -23,7 +23,14 @@ rill:
   olap: duckdb
 ```
 
-`init` requires an existing configuration file. From this new directory, run:
+`init` requires an existing configuration file.
+
+For answers and saved charts in a standalone workspace, also copy
+[themes/default.json](../themes/default.json) from the checkout into
+`themes/default.json` in your workspace. The chart builder reads its default theme
+from the project directory; the included checkout already has this file.
+
+From this new directory, run:
 
 ```bash
 agent-bi init --sqlite /absolute/path/to/your.sqlite --table orders --model orders
@@ -172,6 +179,59 @@ After accepting definitions or promoting a verified query, refresh the build man
 ```bash
 agent-bi compile-rill --model idle_warehouse_waste
 ```
+
+## Enrich with a patch
+
+A harness agent (or you) can propose descriptions, synonyms, metrics and queries as an
+EnrichmentPatch JSON and apply it with one command:
+
+```bash
+agent-bi enrich --model idle_warehouse_waste --apply out/patch.json
+```
+
+The patch is a single transaction. Its four operations are `set_description`,
+`add_synonyms`, `add_metric` and `propose_query`; every touched entry becomes `inferred`
+with `origin: enrich:<patch_id>`. A patch may not contain a `sql` or `expected_sql` key
+anywhere; `add_metric` expressions must pass the metric grammar; a name that belongs to a
+non-metric object is refused (`E_NAME_COLLISION`); synonyms must be unique across the
+model; and the file is capped at 1 MB with a UUID4 `patch_id`. A bad later operation
+leaves earlier operations unwritten.
+
+Confirmed entries are protected. To rewrite one, pass its exact leaf:
+
+```bash
+agent-bi enrich --model idle_warehouse_waste --apply out/patch.json \
+  --allow-confirmed "tables[0].metrics[total_credits_used]"
+```
+
+A parent path, wildcard or near match is not sufficient; without the exact leaf the patch
+is refused with `E_PATCH_TOUCHES_CONFIRMED` and nothing is written. Rewriting a confirmed
+expression reverts that entry to `inferred` and can make verified queries stale.
+
+`propose_query` writes `queries/<name>.json` with status `proposed` and touches nothing
+else. Promote it through the human route you already use: run `ask` to produce an answer
+envelope, then `save --verify --by <person> --expected-sql "<independent SQL>"` with the
+same name. No SQL ever travels inside a patch.
+
+## Preview drift before a refresh
+
+`diff` re-runs catalog discovery and shows exactly what `scan --refresh` would change,
+without writing anything:
+
+```bash
+agent-bi diff --model idle_warehouse_waste --engine duckdb
+```
+
+The Markdown report lists added, removed and type-changed columns, the row count, the
+semantic objects a refresh would add, update or remove, and every accepted object or
+verified query the refresh would break. Structural drift exits 1; a row-count change
+alone is reported and exits 0. Resolve structural drift before accepting definitions or
+re-verifying queries against the new shape.
+
+When an expression change makes verification stale, `verify` prints `STALE <name>` and
+`ask` labels that query `exploratory` with the stale reason. The only way to clear it is
+the operator re-running the independent route (`save --verify --force --expected-sql` on
+the same name); nothing re-verifies automatically.
 
 ## Keep an answer as a chart
 

@@ -12,7 +12,6 @@ COMMANDS = [
 
 UNIMPLEMENTED = {
     "parity": ["--model", "m"],
-    "diff": ["--model", "m", "--engine", "duckdb"],
     "snowflake-load": ["--model", "m"],
 }
 

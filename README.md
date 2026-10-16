@@ -10,9 +10,10 @@ tries known questions and a deterministic resolver first, then proposes a constr
 query when the resolver cannot interpret the question.
 
 **Status: 0.1.0 / M1 accepted.** Supported today: one local SQLite table per model,
-DuckDB execution, Rill **v0.90.5**, saved charts and known-answer verification. The
-accepted version has also been consumed by a separate marketing decision-demo project.
-Views, enrichment patches, drift detection and Snowflake execution are future work.
+DuckDB execution, Rill **v0.90.5**, saved charts, known-answer verification, SQL-free
+enrichment patches applied transactionally, and a read-only drift preview. The accepted
+version has also been consumed by a separate marketing decision-demo project. Views and
+Snowflake execution are future work.
 
 ## Try the included example
 
@@ -68,6 +69,22 @@ If asked to choose a model, select `idle_warehouse_waste`. The repository includ
 skill under `.claude/skills/`. Claude itself uses a model and its normal authentication;
 the underlying Agent BI verified lookup and resolver do not call a model. The CLI-only
 example above requires no Claude subscription or model API key.
+
+## Enrich and preview drift
+
+A harness agent (or you) can propose descriptions, synonyms, metrics and queries as an
+EnrichmentPatch and apply it in one transaction:
+
+```bash
+agent-bi enrich --model idle_warehouse_waste --apply out/patch.json
+agent-bi diff --model idle_warehouse_waste --engine duckdb
+```
+
+A patch carries no SQL, never deletes, and is refused whole if any operation fails;
+confirmed definitions require `--allow-confirmed <exact leaf>`. `propose_query` writes a
+`proposed` query only — a human still promotes it with `save --verify --expected-sql`.
+`diff` writes nothing and exits 1 on structural drift. The [user guide](docs/user-guide.md#enrich-with-a-patch)
+shows the stale → independently re-verified cycle.
 
 ## What the trust label means
 

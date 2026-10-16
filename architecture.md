@@ -460,6 +460,17 @@ Only these four ops exist in v1. Rules:
 - `add_metric` exprs must pass the metric grammar (§5.3.2) or the whole patch is rejected
   (`E_PATCH_REJECTED`, listing the failing op index). There is no op that adds a
   dimension, a fact, a filter or a relationship in v1.
+- **Sprint 5 supervisor reconciliation (2026-10-15):** `add_metric` with `path:
+  tables[0]` creates a new metric, or, when `value.name` identifies an existing metric,
+  rewrites only that metric's `expr` and `description`, preserving its synonyms and
+  other unrelated fields. A name owned by a non-metric object rejects the whole patch
+  with `E_NAME_COLLISION`. The affected entry for provenance and confirmed protection
+  is `tables[0].metrics[<name>]`, not the operation's parent path. Rewriting a confirmed
+  metric requires `--allow-confirmed` for that exact leaf; otherwise the whole patch
+  is refused with `E_PATCH_TOUCHES_CONFIRMED`. Successful creation or rewriting marks
+  the metric leaf `inferred` with `origin: enrich:<patch-id>` and a current `expr_sha256`.
+  This defines the existing expression-bearing op needed by Sprint 5's stale cycle;
+  it adds no operation and changes neither §4.7 nor any accepted metric expression.
 - `add_synonyms`: the pinned spec requires synonyms to be "unique across all synonyms in
   this semantic model"; a synonym already used by any object (or equal to any object's
   `name`) rejects the whole patch with `E_SYNONYM_NOT_UNIQUE` naming both paths.
@@ -474,7 +485,8 @@ Only these four ops exist in v1. Rules:
   `status: confirmed` is rejected with `E_PATCH_TOUCHES_CONFIRMED` naming the path, unless
   the operator passes `--allow-confirmed <path>` for that exact path, in which case the
   entry is rewritten and reverts to `inferred` (and any verified query depending on it
-  becomes stale under §4.7, which is the intended consequence).
+  becomes stale under §4.7 if a referenced expression changes). Description, synonym
+  and status changes alone do not invalidate verification (§4.7).
 - `enrich --accept <path> --by <who>` flips one entry to `confirmed`. For a metric, it is
   refused with `E_ACCEPT_UNCOVERED` unless at least one current (non-stale) verified query
   references that metric: a definition is accepted only when a known answer exists for it.

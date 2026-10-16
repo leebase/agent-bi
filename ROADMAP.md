@@ -11,6 +11,11 @@ M1 was accepted on 2026-10-15. A separate marketing decision-demo project subseq
 used the accepted version for descriptive analysis. Experiment statistics, causal
 inference and decision scenarios remained that project's responsibility.
 
+Sprint 5 (enrichment and drift) is implemented on this branch: transactional SQL-free
+enrichment patches with confirmed-entry protection and proposed-query promotion
+(`enrich --apply`), the stale → independently re-verified cycle, and a read-only refresh
+preview (`diff`).
+
 ## Candidate improvements after public release
 
 These are proposals, not scheduled or authorized implementation work:
@@ -28,7 +33,6 @@ These are proposals, not scheduled or authorized implementation work:
 
 | Work | Intended acceptance |
 |---|---|
-| Enrichment and drift (original Sprint 5) | Apply a constrained patch transactionally, protect accepted definitions, detect source drift, demonstrate stale → reverified answers. |
 | M2: given a view (original Sprint 6) | Reproduce the table workflow over a view combining fixture tables; independently verify its breakdowns and render it in Rill. |
 | M3: Snowflake parity (original Sprint 7) | Load unchanged semantic definitions into Snowflake and demonstrate independently checked parity across engines. Requires account access and explicit NULL-ordering conventions. |
 

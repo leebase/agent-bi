@@ -366,6 +366,88 @@ def test_refresh_breaks_a_verified_query_that_depends_on_a_dropped_column(projec
     assert (read(project), read(project, ".provenance.yaml")) == before
 
 
+def test_refresh_breaks_queries_through_preserved_broken_dimension_and_time(project):
+    """A1: a kept object whose column is gone breaks every query reference kind."""
+    run_scan(project, now=T1)
+    side = load(project, ".provenance.yaml")
+    for key in ("tables[0].dimensions[warehouse_name]", "tables[0].time_dimensions[usage_day]"):
+        side["entries"][key].update(
+            {"status": "confirmed", "origin": "human", "by": "synthetic-test-operator", "at": T1}
+        )
+    side["verified_queries"] = {
+        "by_dimension": {
+            "query_hash": "sha256:" + "1" * 64,
+            "semantic_digest": "sha256:" + "2" * 64,
+            "semantic_query": {"metrics": ["row_count"], "dimensions": ["warehouse_name"]},
+        },
+        "by_time": {
+            "query_hash": "sha256:" + "3" * 64,
+            "semantic_digest": "sha256:" + "4" * 64,
+            "semantic_query": {"metrics": ["row_count"], "time": {"dimension": "usage_day", "grain": "day"}},
+        },
+        "by_filter_dimension": {
+            "query_hash": "sha256:" + "5" * 64,
+            "semantic_digest": "sha256:" + "6" * 64,
+            "semantic_query": {
+                "metrics": ["row_count"],
+                "filters": [{"dimension": "warehouse_name", "operator": "=", "values": ["a"]}],
+            },
+        },
+        "by_missing_and_broken": {
+            "query_hash": "sha256:" + "7" * 64,
+            "semantic_digest": "sha256:" + "8" * 64,
+            "semantic_query": {"metrics": ["distinct_warehouse_name"], "dimensions": ["warehouse_name"]},
+        },
+    }
+    write(project, side, ".provenance.yaml")
+    _alter(project, "ALTER TABLE warehouse_metering_history DROP COLUMN warehouse_name",
+           "ALTER TABLE warehouse_metering_history DROP COLUMN usage_day")
+    before = (read(project), read(project, ".provenance.yaml"))
+    with pytest.raises(AgentBiError) as exc:
+        run_scan(project, refresh=True, now=T2)
+    assert exc.value.full_code == "E_REFRESH_BREAKS_ACCEPTED"
+    msg = exc.value.message
+    assert "tables[0].dimensions[warehouse_name] (missing column warehouse_name)" in msg
+    assert "tables[0].time_dimensions[usage_day] (missing column usage_day)" in msg
+    assert "verified_queries[by_dimension] (broken dependency warehouse_name)" in msg
+    assert "verified_queries[by_time] (broken dependency usage_day)" in msg
+    assert "verified_queries[by_filter_dimension] (broken dependency warehouse_name)" in msg
+    assert (
+        "verified_queries[by_missing_and_broken] "
+        "(missing distinct_warehouse_name; broken dependency warehouse_name)" in msg
+    )
+    assert (read(project), read(project, ".provenance.yaml")) == before  # writes nothing
+
+
+def test_refresh_breaks_a_verified_query_through_a_named_filter(project):
+    """A1: a kept filters[] entry whose column is gone breaks queries using named_filters."""
+    run_scan(project, now=T1)
+    model, side = load(project), load(project, ".provenance.yaml")
+    flt = {"name": "big_spend", "description": "Large rows", "expr": '"credits_used" > 100'}
+    model["tables"][0]["filters"] = [flt]
+    side["entries"]["tables[0].filters[big_spend]"] = {
+        "status": "confirmed", "origin": "human", "at": T1, "by": "synthetic-test-operator",
+        "expr_sha256": expr_sha256(flt["expr"]),
+    }
+    side["verified_queries"] = {
+        "filtered": {
+            "query_hash": "sha256:" + "9" * 64,
+            "semantic_digest": "sha256:" + "0" * 64,
+            "semantic_query": {"metrics": ["row_count"], "named_filters": ["big_spend"]},
+        }
+    }
+    write(project, model)
+    write(project, side, ".provenance.yaml")
+    _alter(project, "ALTER TABLE warehouse_metering_history DROP COLUMN credits_used")
+    before = (read(project), read(project, ".provenance.yaml"))
+    with pytest.raises(AgentBiError) as exc:
+        run_scan(project, refresh=True, now=T2)
+    assert exc.value.full_code == "E_REFRESH_BREAKS_ACCEPTED"
+    assert "tables[0].filters[big_spend] (missing column credits_used)" in exc.value.message
+    assert "verified_queries[filtered] (broken dependency big_spend)" in exc.value.message
+    assert (read(project), read(project, ".provenance.yaml")) == before  # writes nothing
+
+
 def test_refresh_drops_catalog_objects_whose_column_is_gone(project):
     run_scan(project, now=T1)
     _alter(project, "ALTER TABLE warehouse_metering_history DROP COLUMN credits_used")

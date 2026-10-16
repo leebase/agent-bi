@@ -339,6 +339,38 @@ def refresh_merge(
     primary_key: dict[str, Any] | None, new_sidecar: dict[str, Any], column_names: set[str],
     model_name: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    result = refresh_merge_detailed(
+        existing_model, existing_sidecar, gen_objs, gen_entries, primary_key, new_sidecar,
+        column_names, model_name, merge_when_broken=False,
+    )
+    if result.broken:
+        raise validation_error(
+            "REFRESH_BREAKS_ACCEPTED",
+            "refresh would break accepted content: " + "; ".join(result.broken)
+            + "; nothing written",
+        )
+    return result.model, result.sidecar
+
+
+@dataclass(frozen=True)
+class RefreshMerge:
+    """The merge ``scan --refresh`` would perform, plus what it would break (§5.12)."""
+
+    model: dict[str, Any]
+    sidecar: dict[str, Any]
+    broken: list[str]
+
+
+def refresh_merge_detailed(
+    existing_model: dict[str, Any], existing_sidecar: dict[str, Any],
+    gen_objs: dict[str, list[dict[str, Any]]], gen_entries: dict[str, Any],
+    primary_key: dict[str, Any] | None, new_sidecar: dict[str, Any], column_names: set[str],
+    model_name: str, merge_when_broken: bool = True,
+) -> RefreshMerge:
+    """Compute the merged model/sidecar and the list of accepted objects or verified queries
+    a refresh would break, without writing or raising (``scan`` turns a non-empty list into
+    ``E_REFRESH_BREAKS_ACCEPTED``; ``diff`` reports it). ``merge_when_broken=False`` returns
+    as soon as breakage is known, so ``scan`` refuses before any further merge step runs."""
     tables = existing_model.get("tables") or []
     if len(tables) != 1:
         raise validation_error(
@@ -349,6 +381,7 @@ def refresh_merge(
 
     # Accepted content that references a column the catalog no longer has blocks the refresh.
     broken: list[str] = []
+    unavailable: set[str] = set()  # kept objects whose required physical column is gone
     for kind in KINDS + ("filters",):
         for o in table.get(kind) or []:
             if _status(old_entries, kind, o["name"]) == "catalog" and kind != "filters":
@@ -356,16 +389,27 @@ def refresh_merge(
             missing = [c for c in expr_columns(o.get("expr", "")) if c not in column_names]
             if missing:
                 broken.append(f"{entry_key(kind, o['name'])} (missing column {', '.join(missing)})")
+                unavailable.add(o["name"])
 
     merged: dict[str, list[dict[str, Any]]] = {}
     for kind in KINDS:
         merged[kind] = _merge_list(table.get(kind) or [], gen_objs[kind], kind, old_entries)
 
-    surviving = {n["name"] for kind in KINDS + ("filters",) for n in (merged.get(kind) or table.get(kind) or [])}
+    # Names the merge keeps. An intentionally empty merged kind is empty and must not fall
+    # back to the pre-merge table, or a removed object's name would falsely survive.
+    surviving = {n["name"] for kind in KINDS for n in merged[kind]}
+    surviving.update(n["name"] for n in table.get("filters") or [])
     for vq_name, vq in (existing_sidecar.get("verified_queries") or {}).items():
-        gone = [n for n in _query_names((vq or {}).get("semantic_query")) if n not in surviving]
+        refs = _query_names((vq or {}).get("semantic_query"))
+        gone = sorted({n for n in refs if n not in surviving})
+        blocked = sorted({n for n in refs if n in unavailable})
+        notes: list[str] = []
         if gone:
-            broken.append(f"verified_queries[{vq_name}] (missing {', '.join(sorted(set(gone)))})")
+            notes.append("missing " + ", ".join(gone))
+        if blocked:
+            notes.append("broken dependency " + ", ".join(blocked))
+        if notes:
+            broken.append(f"verified_queries[{vq_name}] ({'; '.join(notes)})")
     # A primary key (scan-generated or operator-written) is preserved metadata once carried
     # over; a key column that left the catalog breaks it (§5.2 invariant).
     pk_missing = [
@@ -373,12 +417,8 @@ def refresh_merge(
     ]
     if pk_missing:
         broken.append(f"tables[0].primary_key (missing column {', '.join(pk_missing)})")
-    if broken:
-        raise validation_error(
-            "REFRESH_BREAKS_ACCEPTED",
-            "refresh would break accepted content: " + "; ".join(broken)
-            + "; nothing written",
-        )
+    if broken and not merge_when_broken:
+        return RefreshMerge(existing_model, existing_sidecar, broken)
 
     # Table: replace managed lists in place. An existing primary_key is carried over
     # verbatim (ADR-009); it is derived from the catalog only when the model has none.
@@ -434,7 +474,7 @@ def refresh_merge(
     sidecar["model"] = model_name
     sidecar["entries"] = entries
     sidecar.setdefault("verified_queries", {})
-    return model, sidecar
+    return RefreshMerge(model, sidecar, broken)
 
 
 # ------------------------------------------------------------------------- entry point
