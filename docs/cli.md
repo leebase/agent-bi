@@ -18,13 +18,25 @@ to its `bin/agent-bi`. Run from the analysis project's root, or put
 | `ask --model MODEL --question TEXT` | Answer a matching saved/verified question. |
 | `ask --model MODEL --query-file FILE [--json]` | Execute a SemanticQuery, saved query, known-answer file or resolved result. |
 | `resolve --model MODEL --question TEXT [--choose ID=VALUE ...]` | Resolve deterministically, or return ambiguities/unresolved words. |
-| `verify --model MODEL [--engine duckdb\|rill] [--coverage]` | Check existing known answers and report stale verification. |
+| `verify --model MODEL [--engine duckdb\|rill] [--coverage]` | Check existing known answers and report stale verification. With `--engine rill` it also writes a serving receipt to `out/serving/<model>/` and prints `serving receipt: <path> (<state>)` last. |
+| `status --model MODEL` | Read-only. Print the `Definition:` and `Serving:` lines (latest receipt in `out/serving/<model>/`), the `Not covered by that check` lines and the exclusions line. Writes nothing, never calls Rill, exits 0. |
 | `enrich --model MODEL --accept PATH --by PERSON` | Attribute a human acceptance of a covered definition. |
 | `enrich --model MODEL --apply PATCH [--allow-confirmed PATH]...` | Apply a whole-patch validated EnrichmentPatch in one transaction; SQL-free by construction. |
 | `diff --model MODEL --engine duckdb\|snowflake` | Read-only refresh preview: columns, row count, semantic objects and anything a refresh would break. |
 | `canvas fork --model MODEL --name NAME` | Create an operator-owned canvas. |
 | `save --from ANSWER --name NAME [--question TEXT] [--add-to-canvas NAME]` | Keep a query and chart. |
 | `save ... --verify --by PERSON --expected-sql SQL [--force]` | Independently verify the saved query; `--force` replaces an existing name. |
+
+`ask` prints `Definition:`, `Serving:` and the exclusions line instead of a single trust label. Its
+envelope is `agent-bi-answer/2.0`: `receipt.trust` and `receipt.trust_reason` are fixed
+`REMOVED in agent-bi-provenance-record/2.0 ...` tombstone strings (not trust states); read
+`receipt.evidence` (`definition`, `serving`). `ask` reads receipts only and never calls Rill.
+
+`verify --engine rill` exit codes: 0 when every query matched or was skipped as unsupported; 1 on
+any `MISMATCH` or `STALE` query; 3 when any query could not be asked (`E_ENGINE`,
+`E_ENGINE_UNAVAILABLE`). A receipt is written in every such case. A stored `query_hash` that
+disagrees with the stored `semantic_query` is refused before the run starts (`E_PROVENANCE_MISMATCH`,
+exit 2, naming the query); no query is sent and no receipt is written.
 
 `ask` accepts exactly one of `--question` and `--query-file`. For the full flags use
 `agent-bi <command> --help`.

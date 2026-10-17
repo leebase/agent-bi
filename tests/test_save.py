@@ -255,7 +255,7 @@ def test_verify_promotes_a_verified_query(tmp_path, capsys):
     assert cli(p, capsys, "verify", "--model", MODEL, "--coverage")[0] == 0
     # and the question now resolves with no LLM
     rc, out, _ = cli(p, capsys, "ask", "--model", MODEL, "--question", "Average credits per warehouse?")
-    assert rc == 0 and f"trust: verified (verified as {TENTH['name']};" in out
+    assert rc == 0 and f"verified as {TENTH['name']} at" in out
 
 
 def test_verify_only_adds_to_the_model_and_sidecar(tmp_path, capsys):

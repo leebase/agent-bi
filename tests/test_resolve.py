@@ -685,7 +685,8 @@ def test_resolved_query_hash_equals_asks(tmp_path, capsys):
         assert rc == 0, err
         env = envelope_of(p, aout)
         assert env["provenance"]["artifact"]["query_hash"] == doc["query_hash"]
-        assert env["provenance"]["receipt"]["trust"] == "exploratory"  # resolved is not verified
+        assert env["provenance"]["receipt"]["trust"].startswith("REMOVED in agent-bi-provenance-record/2.0")  # resolved is not verified
+        assert env["provenance"]["receipt"]["evidence"]["definition"]["state"] == "none"
         print(f"{question!r}: resolve query_hash == ask query_hash == {doc['query_hash']}")
 
 

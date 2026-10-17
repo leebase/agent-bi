@@ -207,7 +207,11 @@ def test_verify_rill_passes_all_eight(project, monkeypatch):
     calls = fake_rill(monkeypatch, project)
     res = run_verify(project)
     assert res.exit_code == 0
-    assert res.lines == [f"PASS {n}" for n in NAMES]
+    assert res.lines[:-1] == [f"PASS {n}" for n in NAMES]
+    assert res.lines[-1].startswith("serving receipt: out/serving/") and res.lines[-1].endswith("(matched)")
+    assert res.receipt_state == "matched" and res.receipt_rel is not None
+    assert (project / res.receipt_rel).is_file()
+    assert res.outcomes == {n: "MATCH" for n in NAMES}
     assert calls[0] == f"SELECT row_count FROM {MODEL} LIMIT 1"  # readiness first
     assert len(calls) == 10  # one readiness probe, then the nine verified queries
 
@@ -220,12 +224,17 @@ def test_an_empty_answer_when_rows_are_expected_is_a_fail(project, monkeypatch):
     assert any("rill returned no rows; expected 3" in ln for ln in res.lines)
 
 
-def test_a_failed_rill_query_is_a_fail_not_a_pass(project, monkeypatch):
+def test_a_failed_rill_query_is_an_error_not_a_pass_or_a_mismatch(project, monkeypatch):
     fake_rill(monkeypatch, project,
               {"row_count_all": rill_route.RillResult(1, [], [], "boom", "")})
     res = run_verify(project)
-    assert res.results["row_count_all"] == "FAIL" and res.exit_code == 1
-    assert any("rc=1" in ln and "boom" in ln for ln in res.lines)
+    assert res.outcomes["row_count_all"] == "ERROR" and res.exit_code == 3
+    assert res.error is not None and res.error.code == "ENGINE"
+    assert any("rc=1" in ln and "boom" in ln for ln in res.lines)  # terminal only
+    assert res.receipt_state == "incomplete"
+    entry = next(e for e in res.receipt["entries"] if e["name"] == "row_count_all")
+    assert entry["error_code"] == "E_ENGINE"
+    assert entry["diff"] is None
 
 
 def test_a_header_only_answer_is_a_fail(project, monkeypatch):
@@ -293,20 +302,23 @@ def test_binding_refuses_a_rill_serving_another_directory(project, monkeypatch, 
     calls = fake_rill(monkeypatch, project)
     other = tmp_path / "elsewhere" / "rill"
     serve(monkeypatch, project, path=other)
-    with pytest.raises(AgentBiError) as exc:
-        run_verify(project)
-    assert exc.value.code == "ENGINE_UNAVAILABLE" and exc.value.exit_code == 3
-    assert str(other) in exc.value.message and RILL_SCHEMA_PIN in exc.value.message
+    res = run_verify(project)
+    assert res.exit_code == 3 and res.error is not None
+    assert res.error.code == "ENGINE_UNAVAILABLE"
+    assert str(other) in res.error.message and RILL_SCHEMA_PIN in res.error.message
     assert calls == []  # not even the readiness probe ran
+    assert res.receipt_state == "incomplete"  # the receipt is still written
+    assert all(e["error_code"] == "E_ENGINE_UNAVAILABLE" for e in res.receipt["entries"])
 
 
 def test_binding_refuses_the_wrong_version(project, monkeypatch):
     calls = fake_rill(monkeypatch, project)
     serve(monkeypatch, project, version="v0.91.0")
-    with pytest.raises(AgentBiError) as exc:
-        run_verify(project)
-    assert exc.value.code == "ENGINE_UNAVAILABLE" and "v0.91.0" in exc.value.message
+    res = run_verify(project)
+    assert res.exit_code == 3 and res.error is not None
+    assert res.error.code == "ENGINE_UNAVAILABLE" and "v0.91.0" in res.error.message
     assert calls == []
+    assert res.receipt_state == "incomplete"
 
 
 @pytest.mark.parametrize("failure", [
@@ -319,11 +331,12 @@ def test_binding_refuses_an_unreachable_or_unreadable_endpoint(project, monkeypa
         raise failure
 
     monkeypatch.setattr(rill_route, "fetch_local_config", broken)
-    with pytest.raises(AgentBiError) as exc:
-        run_verify(project)
-    assert exc.value.code == "ENGINE_UNAVAILABLE" and exc.value.exit_code == 3
-    assert "/local/config" in exc.value.message
+    res = run_verify(project)
+    assert res.exit_code == 3 and res.error is not None
+    assert res.error.code == "ENGINE_UNAVAILABLE" and res.error.exit_code == 3
+    assert "/local/config" in res.error.message
     assert calls == []
+    assert res.receipt_state == "incomplete"
 
 
 @pytest.mark.parametrize("body", [{}, {"project_path": "/x"}, {"version": "v0.90.5"},
@@ -341,9 +354,10 @@ def test_binding_refuses_a_project_without_a_rill_directory(project, monkeypatch
 
     fake_rill(monkeypatch, project)
     shutil.rmtree(project / "rill")
-    with pytest.raises(AgentBiError) as exc:
-        run_verify(project)
-    assert exc.value.code == "ENGINE_UNAVAILABLE" and "does not exist" in exc.value.message
+    res = run_verify(project)
+    assert res.exit_code == 3 and res.error is not None
+    assert res.error.code == "ENGINE_UNAVAILABLE" and "does not exist" in res.error.message
+    assert res.receipt_state == "incomplete"
 
 
 def test_fetch_local_config_reads_the_pinned_endpoint(monkeypatch):

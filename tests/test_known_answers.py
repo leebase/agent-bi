@@ -93,13 +93,27 @@ def test_a_deliberately_wrong_expected_file_fails_with_a_diff(vproject, capsys):
     assert sum(1 for l in lines if l.startswith("PASS ")) == 8
 
 
-def test_a_wrong_query_hash_is_a_failure_not_a_pass(vproject, capsys):
+def test_a_wrong_query_hash_is_a_failure_not_a_pass(vproject, capsys, monkeypatch):
+    """A wrong stored query_hash never passes. The duckdb route is unchanged (FAIL, exit 1);
+    the rill route refuses with E_PROVENANCE_MISMATCH (exit 2) before binding, any query or
+    any receipt (manager ruling, BI-003)."""
     ka = vproject["dir"] / "tests/fixtures/known-answers" / MODEL / "row_count_all.json"
     doc = json.loads(ka.read_text())
     doc["query_hash"] = "sha256:" + "0" * 64
     ka.write_text(json.dumps(doc))
     rc, out, _ = run_cli(vproject, capsys, "verify", "--model", MODEL)
     assert rc == 1 and "FAIL row_count_all: query_hash" in out
+
+    from tests.test_verify_rill import fake_rill
+
+    (vproject["dir"] / "rill").mkdir(exist_ok=True)
+    calls = fake_rill(monkeypatch, vproject["dir"])
+    rc, out, err = run_cli(vproject, capsys, "verify", "--model", MODEL, "--engine", "rill")
+    assert rc == 2
+    last = err.strip().splitlines()[-1]
+    assert last.startswith("E_PROVENANCE_MISMATCH: ") and "row_count_all" in last
+    assert not (vproject["dir"] / "out" / "serving").exists()  # no receipt
+    assert not calls  # no query (or binding check) was issued
 
 
 def test_a_missing_known_answer_file_is_an_error(vproject, capsys):

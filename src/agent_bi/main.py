@@ -136,7 +136,39 @@ def cmd_verify(args: argparse.Namespace) -> int:
     )
     for line in result.lines:
         print(line)
+    if result.error is not None:
+        print(str(result.error), file=sys.stderr)
     return result.exit_code
+
+
+def cmd_status(args: argparse.Namespace) -> int:
+    """Read-only model report: the Definition and Serving lines (§4.8.4). Reads receipts
+    from ``out/serving/<model>/`` and never calls Rill."""
+    from agent_bi.rill_models import current_models_digest
+    from agent_bi.semantic.model import load_model_dict
+    from agent_bi.semantic.provenance import load_sidecar_dict
+    from agent_bi.semantic.scan import paths_for
+    from agent_bi.semantic.validate import validate
+    from agent_bi.verify import serving
+
+    config = load_config(args.config)
+    project_dir = _project_dir(args)
+    semantic_dir = project_dir / "semantic"
+    validate(args.model, semantic_dir)
+    model_path, sidecar_path = paths_for(semantic_dir, args.model)
+    model = load_model_dict(str(model_path))
+    sidecar = load_sidecar_dict(sidecar_path)
+    models_digest = current_models_digest(
+        config.base_dir / config.rill.project_dir, model, config.engines.duckdb.rill_models
+    )
+    definition_line, serving_lines = serving.model_report(
+        project_dir, args.model, model, sidecar, models_digest
+    )
+    print(f"Definition: {definition_line}")
+    print(f"Serving:    {serving_lines[0]}")
+    for line in serving_lines[1:]:
+        print(f"            {line}")
+    return 0
 
 
 def cmd_contract(args: argparse.Namespace) -> int:
@@ -322,6 +354,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add(sub, "compile-rill", "Write the Rill project files", cmd_compile_rill, model_arg)
     _add(sub, "compile-sql", "Print the compiled SQL for a SemanticQuery", cmd_compile_sql, compile_sql_args)
     _add(sub, "verify", "Run the known-answer checks", cmd_verify, verify_args)
+    _add(sub, "status", "Show the model's Definition and Serving lines (read-only)", cmd_status, model_arg)
     _add(sub, "parity", "Compare the four verification routes", ni("parity"), model_arg)
     _add(sub, "ask", "Answer a SemanticQuery or a question", cmd_ask, ask_args)
     _add(sub, "save", "Promote an answer into a saved query and chart", cmd_save, save_args)

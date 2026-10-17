@@ -6,8 +6,8 @@ from agent_bi.main import build_parser, main
 
 # Every architecture §6 command.
 COMMANDS = [
-    "scan", "validate", "compile-rill", "compile-sql", "verify", "parity", "ask", "save",
-    "canvas fork", "enrich", "diff", "contract", "resolve", "init", "snowflake-load",
+    "scan", "validate", "compile-rill", "compile-sql", "verify", "status", "parity", "ask",
+    "save", "canvas fork", "enrich", "diff", "contract", "resolve", "init", "snowflake-load",
 ]
 
 UNIMPLEMENTED = {

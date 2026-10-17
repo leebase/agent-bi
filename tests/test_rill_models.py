@@ -943,8 +943,9 @@ def test_the_ask_receipt_uses_the_current_digest_not_the_sidecar_copy(tmp_path, 
     assert rc == 0, err
     env = json.loads(out)
     assert env["provenance"]["artifact"]["models_digest"] == current
-    assert env["provenance"]["receipt"]["trust"] == "exploratory"
-    assert "models_digest" in env["provenance"]["receipt"]["trust_reason"]
+    definition = env["provenance"]["receipt"]["evidence"]["definition"]
+    assert definition["state"] == "stale"
+    assert "upstream Rill model changed" in definition["claim"]
 
 
 # --------------------------------------------------------------------------- staleness
@@ -966,9 +967,9 @@ def test_a_meaningful_edit_to_the_join_model_makes_both_queries_stale(tmp_path, 
                        "--question", "credits by cost center", "--json")
     assert rc == 0, err
     env = json.loads(out)
-    assert env["provenance"]["receipt"]["trust"] == "exploratory"
-    reason = env["provenance"]["receipt"]["trust_reason"]
-    assert "stale" in reason and "models_digest" in reason
+    definition = env["provenance"]["receipt"]["evidence"]["definition"]
+    assert definition["state"] == "stale"
+    assert "upstream Rill model changed" in definition["claim"]
 
 
 def test_a_meaningful_edit_to_an_upstream_source_makes_both_queries_stale(tmp_path, capsys):

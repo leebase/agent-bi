@@ -35,16 +35,16 @@ from agent_bi.query.contract import (
     validate_against_model,
 )
 from agent_bi.query.files import load_query_file
-from agent_bi.query.verified import find_by_hash, normalize_question
+from agent_bi.query.verified import normalize_question
 from agent_bi.rill_models import current_models_digest
 from agent_bi.semantic.model import load_model_dict
 from agent_bi.semantic.provenance import entry_key, load_sidecar_dict
 from agent_bi.semantic.scan import paths_for
 from agent_bi.semantic.validate import validate
-from agent_bi.verify.known_answers import _changed_definitions
+from agent_bi.verify import serving
 
-ENVELOPE_SCHEMA = "agent-bi-answer/1.0"
-RECORD_SCHEMA = "agent-bi-provenance-record/1.0"
+ENVELOPE_SCHEMA = "agent-bi-answer/2.0"
+RECORD_SCHEMA = "agent-bi-provenance-record/2.0"
 MAX_TEXT_ROWS = 50
 _KIND_PLURAL = {
     "metric": "metrics", "dimension": "dimensions", "time_dimension": "time_dimensions",
@@ -104,40 +104,7 @@ def find_question(
     return name, sq
 
 
-# -- trust (§4.7, exactly this table) --------------------------------------------------------
-
-
-def _iso(epoch: Any) -> str:
-    if isinstance(epoch, int):
-        return datetime.fromtimestamp(epoch, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return "an earlier verification"
-
-
-def compute_trust(
-    query: SemanticQuery, model: dict[str, Any], sidecar: dict[str, Any], q_hash: str,
-    digest: str, definitions: dict[str, dict[str, Any]], models_digest: str | None = None,
-) -> tuple[str, str, str | None]:
-    """``(trust, trust_reason, verified_against)``; first matching row of the §4.7 table wins."""
-    records = sidecar.get("verified_queries") or {}
-    names = find_by_hash(records, q_hash)
-    current = [n for n in names if records[n].get("semantic_digest") == digest]
-    if current:
-        name = current[0]
-        unconfirmed = [n for n, d in definitions.items() if d["status"] != "confirmed"]
-        if not unconfirmed:
-            return "governed", f"verified as {name}; all definitions confirmed", name
-        return "verified", f"verified as {name}; unconfirmed definitions: {', '.join(unconfirmed)}", name
-    if names:
-        name = names[0]
-        rec = records[name]
-        removed: list[str] = []
-        now = definition_digests(query, model, removed, models_digest)
-        changed = _changed_definitions(rec.get("definition_digests") or {}, now, removed)
-        yaml_vq = next((v for v in model.get("verified_queries") or [] if v.get("name") == name), {})
-        since = _iso(yaml_vq.get("verified_at"))
-        reason = f"verification of {name} is stale: definitions changed since {since} ({changed})"
-        return "exploratory", reason, None
-    return "exploratory", "no verified query matches", None
+# -- definition state (§4.7 table; §4.8.2 claim sentences) ----------------------------------
 
 
 def referenced_with_status(
@@ -196,13 +163,25 @@ def text_table(columns: list[str], rows: list[list[Any]]) -> str:
     return "\n".join(lines)
 
 
-def render_text(env: dict[str, Any], q: SemanticQuery, note: str | None, paths: list[str]) -> str:
+def render_text(
+    env: dict[str, Any], q: SemanticQuery, note: str | None, paths: list[str],
+    serving_info: serving.ServingInfo | None = None,
+) -> str:
     prov = env["provenance"]
     rec, art = prov["receipt"], prov["artifact"]
     defs = ", ".join(f"{n}={d['status']}" for n, d in art["definitions"].items())
+    evidence = rec["evidence"]
     parts = [
         interpretation(q),
-        f"trust: {rec['trust']} ({rec['trust_reason']})",
+        f"Definition: {evidence['definition']['claim']}",
+        f"Serving:    {evidence['serving']['claim']}",
+    ]
+    if serving_info is not None and serving_info.context:
+        parts.append(f"            {serving_info.context}")
+    if serving_info is not None and serving_info.diff:
+        parts += [f"            {d}" for d in serving_info.diff]
+    parts += [
+        f"            {serving.EXCLUSIONS}",
         f"published: {'true' if rec['published'] else 'false'}",
         f"definitions: {defs}",
         "```sql\n" + art["compiled_sql"] + "\n```",
@@ -256,8 +235,21 @@ def run_ask(
     )
     q_hash, digest = query_hash(q), semantic_digest(q, model, models_digest)  # step 3
     definitions = referenced_with_status(q, model, sidecar)
-    trust, reason, against = compute_trust(
-        q, model, sidecar, q_hash, digest, definitions, models_digest
+    removed: list[str] = []
+    current_defs = definition_digests(q, model, removed, models_digest)
+    statuses = {name: d["status"] for name, d in definitions.items()}
+    definition = serving.classify_definition(
+        q_hash, digest, sidecar, model, current_defs, removed, statuses
+    )
+    against = definition.name if definition.state in ("governed", "verified") else None
+    ka_digest = None
+    if definition.name is not None:
+        side_rec = (sidecar.get("verified_queries") or {}).get(definition.name) or {}
+        ka = serving.load_known_answer(project_dir, model_name, definition.name, side_rec)
+        if ka is not None:
+            ka_digest = serving.known_answer_content_sha256(ka.get("expected"))
+    serving_info = serving.answer_serving(
+        project_dir, model_name, q_hash, definition.state, digest, ka_digest
     )
     published = components.is_published(project_dir, config, q_hash, digest)
 
@@ -293,8 +285,12 @@ def run_ask(
             "dialect": compiled.dialect,
         },
         "receipt": {
-            "trust": trust,
-            "trust_reason": reason,
+            "trust": serving.TOMBSTONE_TRUST,
+            "trust_reason": serving.TOMBSTONE_TRUST_REASON,
+            "evidence": {
+                "definition": definition.evidence(),
+                "serving": serving_info.evidence(),
+            },
             "published": published,
             "verified_against": against,
             "engine": engine_name,
@@ -325,4 +321,4 @@ def run_ask(
         vl.write_text(json.dumps(chart, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         written.append(vl)
     rels = [p.relative_to(project_dir).as_posix() for p in written]
-    return Answer(envelope, render_text(envelope, q, note, rels), rels)
+    return Answer(envelope, render_text(envelope, q, note, rels, serving_info), rels)

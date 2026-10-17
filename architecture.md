@@ -414,8 +414,9 @@ part records facts about one execution.
     "dialect": "duckdb"
   },
   "receipt": {
-    "trust": "governed | verified | exploratory",
-    "trust_reason": "<one line from the §4.7 table>",
+    "trust": "REMOVED in agent-bi-provenance-record/2.0: … (transitional tombstone, §4.8.4.1)",
+    "trust_reason": "REMOVED in agent-bi-provenance-record/2.0: …",
+    "evidence": { "definition": {…}, "serving": {…} },
     "published": false,
     "verified_against": "<verified query name> | null",
     "engine": "duckdb",
@@ -563,6 +564,8 @@ determinism contract (ADR-007) depends on, and every receipt records them.
 
 ### 4.7 Semantic digest, trust labels, and invalidation
 
+**M2.x1 (D451):** the §4.7 trust table below is retained as the **Definition** state computation of §4.8 (`governed` / `verified` / `stale` / `none`, the last two being the former `exploratory` rows). It is no longer emitted as a scalar `trust` field; §4.8 governs the answer envelope, presentation and serving receipts. The 1.0 envelope shapes in §4.4 are superseded by schema 2.0 (§4.8.4.1).
+
 **Semantic digest.** For a SemanticQuery `q` against model `m`, `semantic_digest(q, m)` is
 the sha256 of the canonical JSON of:
 
@@ -625,6 +628,323 @@ known-answer file and the sidecar record with the new digest. Nothing re-verifie
 automatically. `enrich --accept` refuses to confirm a metric with no current verified
 query (`E_ACCEPT_UNCOVERED`, §4.5), so `governed` can only be reached through a known
 answer that exists for the definitions as they stand.
+
+### 4.8 Definition and Serving evidence — the M2.x1 trust contract (frozen, D451)
+
+**Status:** FROZEN 2026-10-17 (D450/D451): r0 plus Sol's four smallest corrections, confirmed by `reports/r1/REVIEW.md` (no blocking findings). Not implemented; implementation needs separate authorization.
+**Scope:** Agent BI M1/M2 model forms (single-table models; the operator's Rill model graph,
+`architecture.md` §5.13) on a local Rill v0.90.5 project over one local SQLite file.
+
+#### 4.8.1 The product claim
+
+> Agent BI distinguishes trusted business meaning from observed serving behavior. It can
+> establish that a definition has been accepted and independently verified, and separately
+> record that Rill returned the expected result for specific verified queries through a specific
+> route at a specific time. It makes no claim about unobserved execution paths or time between
+> checks. (XO, D449)
+
+**Operating rule:** if you want to know whether Rill still serves the verified answer, check it
+again. Agent BI keeps re-checking cheap (`verify --engine rill`) and infers nothing in between.
+
+**Why only two dimensions.** The A′ probe (D441) showed that Rill's served answer can change
+while every Rill definition stays byte-identical:
+- an `.env` `init_sql` view;
+- a removed migration's residue;
+- a clock expression.
+
+Three adversarial reviews of a four-dimension draft (`plans/agent-bi-m2x-contract-20261017/`,
+preserved as research) found that drift-continuity and data-identity claims carried most of the
+cost and most of the failures. This contract does not make them.
+
+#### 4.8.2 Evidence object 1 — Definition (existing; meaning narrowed)
+
+##### 4.8.2.1 What it is
+
+This object is the existing trust machinery (`architecture.md` §4.7, §5.6, ADR-010), including
+M2's dependency staleness (`models_digest`, §5.13 rule 4). The mechanism is unchanged; the claim
+is about definitions only. It combines two facts:
+- a person set sidecar status `confirmed` on each referenced metric and dimension;
+- a known answer exists whose `semantic_digest` equals the digest computed now. The known answer
+  was computed once by the independent route (human-written SQL through stdlib `sqlite3`).
+
+"Equals the digest computed now" is an endpoint comparison. It does not establish that the
+definitions never differed in between.
+
+##### 4.8.2.2 States (per answer; the existing §4.7 table, first match wins)
+
+| State | Condition | Claim sentence |
+|---|---|---|
+| `governed` | current-digest known answer, and every referenced definition `confirmed` | "A person accepted this query's definitions, and an independent computation agreed with them when verified as `<name>` at `<verified_at>`; the definitions covered by the semantic digest match those recorded with that verification." |
+| `verified` | current-digest known answer; some definition not `confirmed` | "An independent computation agreed with this query's definitions when verified as `<name>` at `<verified_at>`; the definitions covered by the semantic digest match those recorded with that verification; `<names>` have not been accepted by a person." |
+| `stale` | known answer exists; `semantic_digest` differs | "This query was verified as `<name>` at `<verified_at>`, but its definitions now differ from the verified version (`<changed>`); no verification of the current definitions exists." |
+| `none` | no verified query matches | "No verified query matches this question." |
+
+- `<changed>` is the existing `definition_digests` explanation, rendered in canonical order:
+  - each changed definition is named;
+  - a changed `models_digest` is rendered "upstream Rill model changed";
+  - a removed object is rendered "`<name>` (removed)".
+- **Model level.** The line shows counts: "`<K>` verified queries: `<g>` governed, `<v>`
+  verified, `<s>` stale". It never calls the whole model `governed`. With no verified queries it
+  reads "No verified queries."
+- The word **governed** appears only on the `Definition:` line or as "governed definition". It
+  is never a headline status.
+
+##### 4.8.2.3 Does not claim
+
+- That Rill serves anything, through any route, at any time.
+- That the business meaning is right. The record is that a person accepted it.
+- Anything about generated Rill files edited outside Agent BI (for example the metrics-view
+  YAML). Their digests are not part of the semantic digest. Only a serving check observes their
+  effect.
+- That the definitions never changed between verification and now.
+- Anything about the data, beyond the record that the known answer was computed by the
+  independent route.
+
+#### 4.8.3 Evidence object 2 — Serving receipt
+
+##### 4.8.3.1 What it is
+
+A receipt is an immutable record of one run of `verify --engine rill` over the interval
+`started_at`–`finished_at`. During that run, Agent BI asked Rill each verified query through
+route R, as principal U. It compared each returned result with the query's known answer under
+comparator C.
+
+A receipt is a fact about that run (ADR-007(c)). It is never recomputed, edited or merged, and
+it says nothing about any other time.
+
+##### 4.8.3.2 Route, principal, scope
+
+- **Route `rill-cli-metrics-sql` (the only one):**
+  - `rill query --local --path <rill dir> --format csv --limit <q.limit> --resolver metrics_sql --properties sql=<rill-dialect SQL>`;
+  - the D396/D398 project binding is checked before every query;
+  - the receipt records the Rill binary and version, and the sha256 of each executed SQL text.
+- **Principal `rill-local-default` (the only one):** the context `rill query --local` runs in.
+  It has no user attributes, and Rill's per-user security policies are not applied.
+  - Display text: "as the local default user".
+  - It is never displayed as a named person.
+- **Scope:** no added canvas filters and no added time range (ADR-008). Each query's own
+  filters, time bounds and limit apply exactly as compiled, and are recorded per query.
+
+##### 4.8.3.3 Comparator `agent-bi-known-answer/1` (today's code, exactly)
+
+- **Columns:** column names and their order, when Rill printed a header. For zero rows the CLI
+  prints nothing. An empty expected result then matches an empty response without any column
+  check.
+- **Rows:** the row count, and rows compared as a multiset after sorting by all columns.
+- **Typing:** CSV cells are typed by the expected column.
+- **Numbers:** both sides are converted to IEEE-754 double and must agree within 0.005. The
+  tolerance applies after conversion, so it does not bound the raw difference: integers above
+  2^53 that differ by 1 compare equal.
+- **Strings:** compared exactly, except that every empty CSV cell, quoted or not, is read as
+  NULL. So a returned `""` matches an expected NULL, and fails against an expected `""`.
+- **NULL:** NULL equals only NULL. Unquoted `null` is NULL; quoted `"null"` is a string.
+- **Dates:** a Rill timestamp at exactly `00:00:00Z` equals the known answer's date.
+
+The comparator does not attest:
+- row order;
+- raw types;
+- exact numeric equality;
+- the distinction between an empty string and NULL;
+- the columns of an empty result.
+
+Receipts and display always name the comparator.
+
+##### 4.8.3.4 Per-query outcomes
+
+Each verified query in the model at the start of the run gets exactly one outcome.
+
+| Outcome | Meaning | Comparison happened |
+|---|---|---|
+| `MATCH` | Rill's result equals the known answer under C | yes |
+| `MISMATCH` | Rill's result differs under C; the diff is kept (≤ 20 rows) | yes |
+| `NOT_CHECKED_STALE` | the definition was `stale` at the start of the run | no ("skipped") |
+| `NOT_CHECKED_UNSUPPORTED` | the `rill` dialect refuses the query | no ("skipped") |
+| `ERROR` | binding refused, engine error or timeout | no ("attempted") |
+
+A `MISMATCH` shows that Rill's result and the known answer differ. It does not by itself say
+which one is wrong.
+
+##### 4.8.3.5 Receipt state (first match wins)
+
+`M` is the number of `MATCH` outcomes. `K` is the number of verified queries at the start of
+the run.
+
+| State | Condition | Claim sentence |
+|---|---|---|
+| `failed` | at least one `MISMATCH` | "During `<interval>`, through Rill Metrics SQL (CLI), as the local default user, `<x>` of `<K>` verified queries returned results that differ from their known answers under agent-bi-known-answer/1." The diff follows. |
+| `incomplete` | no `MISMATCH`, and at least one `ERROR` | "During `<interval>`, the check through Rill Metrics SQL (CLI) did not complete: `<y>` queries could not be asked (`<E_ codes>`). `<M>` queries matched." |
+| `matched` | no `MISMATCH`, no `ERROR`, and `M ≥ 1` | "During `<interval>`, through Rill Metrics SQL (CLI), as the local default user, with no added canvas filters or time range, `<M>` of `<K>` verified queries returned their known answers under agent-bi-known-answer/1." If any were skipped: "`<K−M>` were skipped, not compared (`<name: reason>`, …)." |
+| `no-evidence` | no `MISMATCH`, no `ERROR`, and `M = 0` | "During `<interval>`, no verified query was compared through Rill Metrics SQL (CLI); this check is not serving evidence." |
+
+The four conditions partition every run. N is always `M`, never the exit code: today a model
+with zero queries, or with only unsupported queries, exits 0.
+
+##### 4.8.3.6 Selection and storage
+
+- **Storage.** Receipts live in `out/serving/<model>/<finished_at>-<receipt_id>.json`. They are
+  append-only and gitignored, and never committed (D444). A fresh clone has none.
+- **Shown receipt.** The shown receipt is the most recent by `finished_at` for this model, route
+  and principal, whatever its state. History keeps them all.
+- **Entry digests.** Each entry records the `query_hash`, plus the `semantic_digest` and
+  known-answer content digest of **its known-answer file** at the start of the run. The
+  known-answer content digest is the sha256 of the canonical `{"columns", "rows"}`.
+- **No sensitive values.** No raw Rill error text, `.env` value or Rill hash is stored. Errors
+  are recorded as Agent BI `E_` codes. Diffs are at most 20 result rows, kept only under `out/`.
+- **Threat model.** Receipts are honest local records, not signatures or attestations.
+  `receipt_id` is an identifier.
+
+##### 4.8.3.7 Applicability to a later answer (ordered; first match wins)
+
+A receipt is never rewritten. Whether it says anything about an answer is computed at display
+time.
+
+| Step | Condition | Applicability | Answer-level serving text |
+|---|---|---|---|
+| 1 | no receipt | null | "No serving check recorded." |
+| 2 | the answer matches no verified query | `not-verified` | "This question is not a verified query; serving checks do not cover it." |
+| 3 | the answer's definition is `stale` | `definition-stale` | "This question's definition differs from its verified version; no serving check applies to the current definition." |
+| 4 | the receipt has no entry with this `query_hash` | `not-in-check` | "This question was not part of the serving check during `<interval>`." |
+| 5 | the entry's `semantic_digest` or known-answer content digest differs from the current one | `different-definition-or-answer` | "The serving check during `<interval>` `<verb>` this question under a different definition or known answer than the current one; it is not serving evidence for the current definition." The verb is "compared" for `MATCH`/`MISMATCH`, "skipped" for `NOT_CHECKED_*`, and "attempted" for `ERROR`. |
+| 6 | otherwise | `applies` | The entry's outcome: `MATCH` "… returned its known answer under agent-bi-known-answer/1"; `MISMATCH` "… returned a result different from its known answer"; `NOT_CHECKED_*` "… was skipped (`<reason>`); it was not compared"; `ERROR` "… was attempted but could not be asked (`<E_ code>`); it was not compared". Each is prefixed "In the serving check during `<interval>`, this question". |
+
+**Model level.** With no receipt, show “No serving check recorded.” with no interval, age, or “Not covered by that check” additions. Apply those additions and §4's interval requirements only when a receipt exists. With a receipt, the serving line is the shown receipt's sentence, followed by one line for
+each current verified query whose applicability is not `applies`: "Not covered by that check:
+`<name>` (`stale` | not in the check | different definition or known answer)."
+
+"Skipped" and "attempted" never mean "compared". A re-verification that changes neither
+digest leaves the query at `applies`; verification time is in neither digest.
+
+##### 4.8.3.8 Does not claim
+
+- Anything about any route other than the CLI Metrics SQL route. That includes dashboards,
+  explores, REST aggregation, MCP tools, alerts, reports, exports and every cache. A′ G1: after
+  data was restored, `verify --engine rill` passed while a warmed dashboard request still
+  showed the old numbers.
+- Anything for any principal other than the local default context.
+- Anything for other canvas filters, time ranges, queries, or unverified questions.
+- Anything about rendering: Vega, themes, labels or layout.
+- **Anything before `started_at` or after `finished_at`.** No observation of anything, and no
+  absence of observed change, extends a receipt in time. Changes to Rill's files, environment,
+  stored state, caches or data after the check, including ones nothing in Agent BI notices,
+  are outside it. To learn what Rill does now, run the check again.
+- That Rill read any particular data. It returned results equal under C to known answers.
+- Equality beyond what agent-bi-known-answer/1 checks (§3.3).
+
+#### 4.8.4 Composition and display
+
+**Rule.** Evidence dimensions compose for presentation, but they do not imply one another.
+(D448)
+
+1. **Two lines, always both, no aggregate.** Every model or answer report shows a `Definition:`
+   line and a `Serving:` line, each generated only from its claim sentences. Agent BI emits no
+   single word, colour or icon that summarises them (D444).
+2. **The only cross-object effect** is §3.7 applicability. A `stale` definition, or changed
+   digests, stop an old receipt from applying to the current definition. Nothing else
+   strengthens or weakens either line.
+3. **Serving is shown with its interval and age, and with its exclusions as part of the line:**
+   "Not covered: other read paths and caches, other users, rendering, any time outside the
+   check." This text is never a tooltip or a provenance-only field.
+4. **Tense.** The Serving line is past tense with its interval. It never contains:
+   - "is serving", "serves", "currently", "still", "verified by Rill" or "Rill verified";
+   - "live", "in sync", "guaranteed" or "trusted".
+
+   "Verified query" is the inventory term and is allowed.
+5. **Failure is shown.** A `failed` or `incomplete` receipt remains the Serving line until a
+   newer receipt replaces it.
+
+Examples:
+
+```
+Definition: governed definition — accepted by a person; an independent computation agreed when verified as credits_by_cost_center at 2026-10-15 14:02 UTC; the definitions in the semantic digest match those recorded then.
+Serving:    during 2026-10-17 14:41:58–14:42:06 UTC (12 min ago), through Rill Metrics SQL (CLI), as the local default user, with no added canvas filters or time range, 9 of 9 verified queries returned their known answers under agent-bi-known-answer/1.
+            Not covered: other read paths and caches, other users, rendering, any time outside the check.
+```
+
+Case 5 history (exactly one verified query, `revenue`, references the changed `expr`):
+
+```
+Definition: 9 verified queries: 8 governed, 0 verified, 1 stale (revenue: revenue expression changed).
+Serving:    during 2026-10-17 09:41:58–09:42:06 UTC, … 9 of 9 verified queries returned their known answers … Not covered by that check: revenue (stale).
+            Not covered: other read paths and caches, other users, rendering, any time outside the check.
+```
+
+##### 4.8.4.1 Machine-readable form and the schema break (D444, D445, D448)
+
+The answer envelope and provenance record move to `agent-bi-answer/2.0` and
+`agent-bi-provenance-record/2.0`. The receipt part carries:
+
+```json
+"trust": "REMOVED in agent-bi-provenance-record/2.0: read receipt.evidence (definition, serving)",
+"trust_reason": "REMOVED in agent-bi-provenance-record/2.0: read receipt.evidence",
+"evidence": {
+  "definition": {"state": "governed|verified|stale|none", "claim": "<sentence>", "verified_as": "<name>|null", "verified_at": "<ISO>|null", "changed": ["<name>"]},
+  "serving":    {"state": "matched|failed|incomplete|no-evidence|null", "claim": "<sentence>", "receipt_id": "sha256:…|null", "interval": ["<ISO>", "<ISO>"] | null, "applicability": "applies|different-definition-or-answer|not-in-check|definition-stale|not-verified|null", "query_outcome": "MATCH|MISMATCH|NOT_CHECKED_STALE|NOT_CHECKED_UNSUPPORTED|ERROR|null"}
+}
+```
+
+**Nulls.**
+- With no receipt, `serving.state`, `receipt_id`, `interval` and `applicability` are null.
+- `query_outcome` is set only when `applicability` is `applies`.
+- `serving.state` is the selected receipt's historical run state. Every other state in the envelope is answer-level. Model-level counts appear only in model reports
+  such as `status --model`.
+
+**The tombstone.** The trust tombstone is a 2.x compatibility break mechanism, not a trust
+state. Consumers MUST NOT interpret it as a state. It MAY be removed in a later major schema
+after supported consumers have migrated. (D448)
+- A 1.x reader that tests `trust == "governed"` gets false.
+- A defaulting reader such as `receipt.get("trust", "exploratory")` gets the tombstone.
+
+**Bold Orange** (`decision-demo/scripts/agentbi_demo.py:254-255`) is the named regression
+consumer. It must fail recognisably, or be adapted to show the dimensions it needs. It must
+never synthesize a scalar (D445).
+
+`published` (ADR-010) is unchanged and remains its own fact.
+
+#### 4.8.5 Behavioral cases (normative; the implementation oracle)
+
+**Baseline unless a row says otherwise:** the fixture model has 9 verified queries, all
+`governed`, all supported by the `rill` dialect. "A matched check" means a run in which all 9
+outcomes are `MATCH`.
+
+| # | Scenario (every premise stated) | Definition | Serving (model; answer where stated) |
+|---|---|---|---|
+| 1 | A check runs; all 9 outcomes `MATCH` | 9 governed | `matched` 9 of 9 |
+| 2 | Fresh clone; no check has run | 9 governed | "No serving check recorded." (no receipt) |
+| 3 | `.env` `connector.duckdb.init_sql` view rewrites the relation and takes effect (A′ counterexample 1); a check runs; at least one query returns `MISMATCH`; afterwards the `.env` line is removed and no new check runs | 9 governed | `failed`, with the diff, both before and after the line is removed (that receipt is the latest) |
+| 4 | A migration rewrites the relation, then is deleted (A′ counterexample 2); before any restart a check runs; at least one query returns `MISMATCH` | 9 governed | `failed` |
+| 5 | After a matched check, an agent edits the `expr` of `revenue`, which exactly one verified query references; no new check | 8 governed, 1 stale (`revenue`) | model: `matched` 9 of 9 + "Not covered by that check: <that query> (stale)"; that query's answer: `definition-stale` |
+| 6 | After a matched check, a registered upstream Rill model SQL file of the model's relation is edited; the edit remains within the supported form and changes the computed `models_digest`; no new check | 9 stale ("upstream Rill model changed") | model: `matched` 9 of 9 + 9 "Not covered by that check" lines (stale); every answer: `definition-stale` |
+| 7 | Case 5, then that query is re-verified (`save --verify --force`) with a new known answer, all its definitions `confirmed`; no new check | 9 governed | that query's answer: `different-definition-or-answer` ("compared … under a different definition or known answer"); model: its "Not covered" line reads "different definition or known answer" |
+| 8 | After a matched check, a query is re-verified with unchanged definitions and an unchanged known answer | 9 governed | that query's answer: `applies`, "returned its known answer"; no "Not covered" line |
+| 9 | After a matched check, the generated metrics-view YAML is edited directly (Agent BI's semantic digest does not change); no new check | 9 governed | `matched` 9 of 9, unchanged: no claim is made about any time after the check. A new check is the only way to observe the edit's effect. |
+| 10 | Model with zero verified queries; a check runs (exit 0) | "No verified queries." | `no-evidence` |
+| 11 | All 9 queries are refused by the `rill` dialect; a check runs | 9 governed | `no-evidence`; each answer: `applies`, "was skipped (not supported by the route); it was not compared" |
+| 12 | A check runs; 1 query `ERROR`, 8 `MATCH`, none `MISMATCH` | 9 governed | `incomplete` ("1 queries could not be asked … 8 queries matched") |
+| 13 | A matched check, then a newer check with a `MISMATCH`, then an older matched receipt copied into `out/` | 9 governed | `failed` (latest by `finished_at`) |
+| 14 | Data restored after an edit; a check runs and all 9 outcomes are `MATCH`; a warmed dashboard request still shows the old numbers (A′ G1) | 9 governed | `matched` 9 of 9, with "Not covered: other read paths and caches …" |
+| 15 | A 1.x consumer reads `receipt.trust` from a 2.0 answer | — | gets the tombstone string, which is not a trust state |
+
+#### 4.8.6 Not in M2.x1 (preserved for later units)
+
+- **Observed drift history** of Rill resources (candidate M2.x2). The existing M2 dependency
+  staleness remains, and it is part of Definition.
+- **Data identity claims.**
+- **A dashboard or REST serving route,** other principals, and a stricter comparator
+  (`agent-bi-known-answer/2`).
+
+Research for each is in `plans/agent-bi-m2x-contract-20261017/`.
+
+#### 4.8.7 Implementation boundary (informative; not authorized)
+
+- `verify --engine rill` writes the receipt.
+- A read-only `status --model <m>` prints the two lines.
+- `ask` fills `evidence`.
+- The schemas move to 2.0 with the tombstones.
+- The architecture gains this contract, and ADR-010 is amended.
+- Bold Orange's regression run is part of acceptance.
+- §5 is the acceptance list.
+
+*§4.8 is the frozen M2.x1 contract (`plans/agent-bi-m2x1-contract-20261017/CONTRACT.md`, sha256 `685cc26907f46e20771ccb27b8d4b33f8674f31378d08499ce0106a3f3640f56`) with only its heading levels renumbered; its section references (§1–§7) are to its own sections. Where it and any other part of this document disagree, §4.8 governs (D451, D452).*
 
 ## 5. Component Details
 
@@ -1601,6 +1921,8 @@ it never deletes `semantic/` to see whether `init` can recreate accepted content
 by design it cannot.
 
 ### ADR-010: Trust is bound to semantics; publication is reported, not trusted
+**Amended 2026-10-17 (D451):** trust is two separately reported, non-implying dimensions — Definition (this ADR's semantics, unchanged) and Serving (a dated, route- and principal-bound observation of what Rill returned for specific verified queries, §4.8). No scalar trust label is emitted; no aggregate is computed.
+
 **Status:** Accepted 2026-10-14 (review R2). A trust label certifies a specific set of
 definitions (the `semantic_digest`, §4.7). Changing a referenced `expr` invalidates every
 verification and every component annotation that depended on it, visibly (`STALE`), and

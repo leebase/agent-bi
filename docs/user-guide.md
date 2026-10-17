@@ -65,7 +65,8 @@ your chosen table is valid. Use a table-only SQLite extract for M1; see
 | `semantic/<model>.provenance.yaml` | Origin, definition status and verification metadata. |
 | `rill/models/<model>.sql` | Generated for a table model; **operator-owned** for a view model (never written by Agent BI). |
 | `rill/` | Generated dashboard project and build provenance. |
-| `out/<hash>.answer.json` | Query, rows, trust, SQL and execution receipt. |
+| `out/<hash>.answer.json` | Query, rows, Definition and Serving evidence, SQL and execution receipt. |
+| `out/serving/<model>/<finished_at>-<id>.json` | Serving receipt written by `verify --engine rill` (append-only, gitignored). |
 | `out/<hash>.vl.json` | Vega-Lite chart specification for the answer. |
 | `queries/<name>.json` | A saved query. |
 
@@ -177,7 +178,7 @@ agent-bi ask --model idle_warehouse_waste --query-file out/resolution.json
 ```
 
 Run the second command only after `resolve` exits 0 (`RESOLVED`). This example returns
-averages about 391.29, 156.14 and 77.71, labelled `exploratory`. Deterministic parsing
+averages about 391.29, 156.14 and 77.71, whose Definition line reads `No verified query matches this question.` Deterministic parsing
 does not make an answer verified.
 
 An ambiguous phrase stops for a human choice:
@@ -217,7 +218,7 @@ For example, `total credits used by warehouse name for finance` leaves `finance`
 unresolved. The agent can propose a filter for `FINANCE_REPORTING_WH`, disclose that
 interpretation and submit the JSON. Agent BI validates it and computes the result.
 The agent must never supply SQL or invent a number. Inspect its interpretation and
-trust line before relying on an answer.
+the Definition and Serving lines before relying on an answer.
 
 ## Establish a known answer
 
@@ -240,6 +241,26 @@ printed number. Existing saved queries require `--force` to replace.
 
 Then run `agent-bi verify --model <model>` and, with the correct Rill project running,
 `agent-bi verify --model <model> --engine rill`. `--coverage` shows per-metric coverage.
+
+`verify --engine rill` also writes one serving receipt per run to
+`out/serving/<model>/<finished_at>-<id>.json` and prints
+`serving receipt: <path> (<state>)` last. The state is one of `matched`, `failed`,
+`incomplete` (a query could not be asked; exit 3) or `no-evidence` (nothing was compared).
+Receipts are never edited or deleted by Agent BI. Read the two lines at any time, without Rill:
+
+```bash
+agent-bi status --model <model>
+```
+
+```text
+Definition: 9 verified queries: 9 governed, 0 verified, 0 stale
+Serving:    During 2026-10-17 14:41:58–14:42:06 UTC (12 min ago), through Rill Metrics SQL (CLI), as the local default user, ... 9 of 9 verified queries returned their known answers under agent-bi-known-answer/1.
+            Not covered: other read paths and caches, other users, rendering, any time outside the check.
+```
+
+After a definition change, an older receipt no longer applies to that query: the Serving line
+adds `Not covered by that check: <name> (stale | not in the check | different definition or
+known answer)`. A check is only ever evidence about its own interval.
 Changes to definitions invalidate verification and require independent re-verification.
 
 ## Accept business definitions
@@ -255,7 +276,7 @@ agent-bi enrich --model idle_warehouse_waste \
 agent-bi ask --model idle_warehouse_waste --question "Credits by warehouse?"
 ```
 
-That question becomes `governed`. An unverified question remains `exploratory`, even
+That question's Definition becomes `governed`. An unverified question stays `none`, even
 if its definitions are accepted. A definition without current known-answer coverage
 cannot be accepted (`E_ACCEPT_UNCOVERED`).
 
@@ -318,7 +339,7 @@ alone is reported and exits 0. Resolve structural drift before accepting definit
 re-verifying queries against the new shape.
 
 When an expression change makes verification stale, `verify` prints `STALE <name>` and
-`ask` labels that query `exploratory` with the stale reason. The only way to clear it is
+`ask` shows that query's Definition as `stale`, naming what changed. The only way to clear it is
 the operator re-running the independent route (`save --verify --force --expected-sql` on
 the same name); nothing re-verifies automatically.
 

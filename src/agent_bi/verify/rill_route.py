@@ -157,10 +157,11 @@ def fetch_local_config(url: str = RILL_URL, timeout: float | None = None) -> Any
 
 def check_binding(
     project_path: Path, expected_version: str, fetch: Callable[[], Any] | None = None
-) -> None:
+) -> Any:
     """Require the Rill on :9009 to serve *this* project at the pinned version: ``project_path``
     equals the resolved absolute ``project_path`` argument and ``version`` equals
-    ``expected_version``. Anything else is ``E_ENGINE_UNAVAILABLE`` naming what was served."""
+    ``expected_version``. Anything else is ``E_ENGINE_UNAVAILABLE`` naming what was served.
+    Returns the parsed ``/local/config`` body so callers can record the bound version."""
     wanted = Path(project_path).resolve()
     if not wanted.is_dir():
         raise engine_error(
@@ -183,6 +184,7 @@ def check_binding(
             f"the Rill on {RILL_URL} serves project_path {served_path!r} version {served_version!r}; "
             f"this project needs project_path {str(wanted)!r} version {expected_version!r}",
         )
+    return cfg
 
 
 def wait_until_ready(

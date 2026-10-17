@@ -615,7 +615,8 @@ def test_expr_rewrite_makes_the_query_stale_and_ask_exploratory(tmp_path, capsys
     rc, out, err = cli(p, capsys, "ask", "--model", MODEL, "--query-file",
                        str(p / "tests/fixtures/known-answers" / MODEL / "credits_by_warehouse.json"))
     assert rc == 0, err
-    assert "trust: exploratory (verification of credits_by_warehouse is stale" in out
+    assert "Definition: This query was verified as credits_by_warehouse at" in out
+    assert "now differ from the verified version (total_credits_used)" in out
 
 
 def test_stale_cycle_closes_through_independent_reverification(tmp_path, capsys):
@@ -644,7 +645,8 @@ def test_stale_cycle_closes_through_independent_reverification(tmp_path, capsys)
                        str(p / "tests/fixtures/known-answers" / MODEL
                            / "compute_and_cloud_by_warehouse.json"))
     assert rc == 0, err
-    assert "trust: exploratory (verification of compute_and_cloud_by_warehouse is stale" in out
+    assert "Definition: This query was verified as compute_and_cloud_by_warehouse at" in out
+    assert "now differ from the verified version" in out
     env_rel = next(ln.split()[1] for ln in out.splitlines() if ln.endswith(".answer.json"))
     # the old oracle no longer matches: refusing to verify with it writes nothing
     wrong_sql = (

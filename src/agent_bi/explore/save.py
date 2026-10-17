@@ -39,7 +39,7 @@ from agent_bi.verify.known_answers import compare
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 SAVED_QUERY_SCHEMA = "agent-bi-saved-query/1.0"
-ANSWER_SCHEMA = "agent-bi-answer/1.0"
+ANSWER_SCHEMA = "agent-bi-answer/2.0"
 CANVAS_ROW_HEIGHT = "400px"
 CANVAS_ROW_WIDTH = 12
 

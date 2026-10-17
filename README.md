@@ -13,7 +13,7 @@ governance where required.
 
 Agent BI scans a local SQLite table, generates a Snowflake-format semantic YAML model,
 compiles a Rill dashboard, and answers questions with SQL, provenance and an explicit
-trust label. The Python CLI calls no language model. An optional Claude Code skill
+Definition and Serving evidence. The Python CLI calls no language model. An optional Claude Code skill
 tries known questions and a deterministic resolver first, then proposes a constrained
 query when the resolver cannot interpret the question.
 
@@ -125,16 +125,42 @@ confirmed definitions require `--allow-confirmed <exact leaf>`. `propose_query` 
 `diff` writes nothing and exits 1 on structural drift. The [user guide](docs/user-guide.md#enrich-with-a-patch)
 shows the stale → independently re-verified cycle.
 
-## What the trust label means
+## What the evidence lines mean
 
-| Label | Meaning |
+Agent BI reports two separate, non-implying facts. Neither is a score, neither is a headline
+status, and no single word summarises them.
+
+**Definition** says what was accepted and independently verified, for one query:
+
+| State | Meaning |
 |---|---|
-| `exploratory` | No current known answer matches this query, or its verification is stale. |
-| `verified` | This exact query has a current known answer; some definitions remain unaccepted. |
 | `governed` | This exact query has a current known answer and every definition it uses is human-accepted. |
+| `verified` | This exact query has a current known answer; some definitions remain unaccepted. |
+| `stale` | A known answer exists, but the definitions now differ from the verified version. |
+| `none` | No verified query matches this question. |
 
-These labels describe the executed query. When an agent interprets your words, also
-read its interpretation: a correct computation can still answer a different question.
+The Definition claims nothing about whether Rill serves anything, and nothing about whether the
+business meaning is right: it records that a person accepted it.
+
+**Serving** is a dated receipt of one `agent-bi verify --model M --engine rill` run: what Rill
+returned for the model's verified queries through one route (the Rill CLI Metrics SQL route, as
+the local default user, with no added canvas filters or time range), compared with the known
+answers under `agent-bi-known-answer/1`. Receipts are written to
+`out/serving/<model>/` (gitignored, append-only); `ask` and `status` show the latest by
+`finished_at`, with its interval and age, and always the line
+
+> Not covered: other read paths and caches, other users, rendering, any time outside the check.
+
+A receipt says nothing about any time before or after its interval. To learn what Rill returns
+now, run the check again. A fresh clone has no receipts and reports
+`No serving check recorded.`
+
+```bash
+agent-bi status --model idle_warehouse_waste   # read-only; works without Rill running
+```
+
+When an agent interprets your words, also read its interpretation: a correct computation can
+still answer a different question.
 
 ## Documentation
 

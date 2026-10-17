@@ -160,9 +160,13 @@ def test_f1_a_rill_restarted_on_another_project_mid_run_is_caught(rill_project, 
         return real_fake(*a, **k)
 
     monkeypatch.setattr(rill_route, "run_metrics_sql", swap_after_probe)
-    with pytest.raises(AgentBiError) as exc:
-        run_verify(rill_project)
-    assert exc.value.code == "ENGINE_UNAVAILABLE" and str(other) in str(exc.value)
+    res = run_verify(rill_project)
+    assert res.exit_code == 3 and res.error is not None
+    assert res.error.code == "ENGINE_UNAVAILABLE" and str(other) in res.error.message
+    assert res.receipt_state == "incomplete"
+    assert res.outcomes["total_credits_all"] == "MATCH"  # asked before the swap
+    assert res.outcomes["credits_by_warehouse"] == "MATCH"
+    assert res.outcomes["credits_by_day"] == "ERROR"  # every later query is refused
 
 
 def test_f2_unquoted_null_is_null_and_quoted_null_is_the_string():

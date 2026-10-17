@@ -64,15 +64,26 @@ not write SQL, a Rill file, or a number**; nothing you write is executable text.
 
 ## Presenting an answer
 
-`agent-bi ask` prints the interpretation, a line `trust: <label> (<reason>)`, `published:`,
-`definitions:`, the compiled SQL, the rows, and the paths it wrote. Relay it faithfully:
+`agent-bi ask` prints the interpretation, a `Definition:` line, a `Serving:` line with the
+exclusions line under it, `published:`, `definitions:`, the compiled SQL, the rows, and the paths
+it wrote. Relay it faithfully:
 
 - State the numbers exactly as the table shows them. **Never compute, estimate or round a
   number yourself.**
-- Always quote the trust line. `governed` = a known answer exists and every definition was
-  accepted by a human; `verified` = a known answer exists but some definitions are not yet
-  accepted (the line names them); `exploratory` = no verified query matches or the
-  verification is stale - say plainly that the number is not verified.
+- Always quote the `Definition:` and `Serving:` lines verbatim, both, every time, together with
+  the `Not covered: ...` line. **Never summarise them into one word or a single verdict**
+  (not "trusted", "verified", "good", "fine", "live"): they are two separate facts and neither
+  implies the other.
+  - `Definition` says what was accepted and independently verified for this query
+    (`governed` = a known answer exists and every definition was accepted by a human;
+    `verified` = a known answer exists but some definitions are not yet accepted, and the line
+    names them; `stale` = the definitions changed since the verification; `none` = no verified
+    query matches - say plainly that the number is not verified).
+  - `Serving` is a dated record of one past check of what Rill returned through one route. It
+    says nothing about any time outside the quoted interval. Do not say Rill "is serving" or
+    "still" returns anything. To learn what Rill returns now, the user runs
+    `agent-bi verify --model <m> --engine rill`; run it only when asked. `agent-bi status
+    --model <m>` prints the same two lines for the whole model without calling Rill.
 - If the user wants the answer kept, `agent-bi save --from out/<hash>.answer.json --name <n>`
   (add `--add-to-canvas <canvas>` to place it on a forked canvas). `save --verify` and
   `enrich --accept` are decisions for the human: run them only when the user asks, with the

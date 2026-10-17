@@ -35,16 +35,16 @@ data preparation tools, preserve its columns/rows, and point `init` at that file
 the extract against the source and keep it read-only. Do not change production data or
 drop unrelated views to make the demo run. Native view handling is future work.
 
-## Why is a correct-looking answer exploratory?
+## Why does an answer say "No verified query matches"?
 
 A resolved question is not necessarily verified. A known answer must match the exact
-semantic query, including filters. A filtered finance answer can remain exploratory
-while the unfiltered warehouse breakdown is governed. Accepting definitions does not
-create a verified query. `verified` and `governed` can also fall back to exploratory when
+semantic query, including filters. A filtered finance answer can have Definition `none`
+while the unfiltered warehouse breakdown is `governed`. Accepting definitions does not
+create a verified query. `verified` and `governed` become `stale` when
 definition changes make their evidence stale.
 
-The label describes the query that executed, not whether an agent correctly interpreted
-every word. Review the interpretation and filters on composed answers. Receipts do not
+The Definition line describes the query that executed, not whether an agent correctly
+interpreted every word. Review the interpretation and filters on composed answers. Receipts do not
 yet record a dedicated verified/resolved/composed source field.
 
 ## Repeated ambiguity prompts or smart punctuation
@@ -78,7 +78,7 @@ independent re-verification.
 
 A changed metric expression invalidates the semantic digest of every query that
 references it. `verify` prints `STALE <name>: <changed definitions>` and exits 1, and
-`ask` labels the query `exploratory` with the reason. Re-running the old expected SQL is
+`ask` shows its Definition as `stale` with the reason. Re-running the old expected SQL is
 correctly refused (`E_VERIFY_MISMATCH`): write a corrected independent SQL against the
 new definition, then run `save --verify --force --by <person> --expected-sql "<SQL>"` on
 the same name. Description, synonym and status changes alone do not stale verification.
@@ -171,3 +171,17 @@ re-check. `diff` never modifies the fixture, model, sidecar or outputs.
 For a bug report, include the Agent BI/Rill/Python versions, command, exit code and
 sanitized error output. Do not upload credentials, private datasets or answer files
 containing confidential rows to a public issue.
+
+## The Serving line says "No serving check recorded" or the check did not complete
+
+Serving receipts exist only after `agent-bi verify --model <model> --engine rill` has run in
+this checkout; a fresh clone has none (`out/serving/` is gitignored). Run the check with the
+correct Rill project running. If a query could not be asked (Rill not running, bound to another
+project or version, `rill query` failing or timing out), and no query returned a mismatch, the
+receipt is `incomplete`; if any query returned a mismatch the receipt is `failed` (a mismatch takes
+precedence over an error). Either way, any query that could not be asked makes the command print the
+first `E_...` error and exit 3; fix the cause and run the check again.
+Receipts store Agent BI `E_` codes only, never raw Rill error text; the terminal shows it.
+A `failed` receipt stays the Serving line until a newer check replaces it. After a definition
+change, `Not covered by that check: <name> (...)` means the older receipt does not apply to that
+query; only a new check observes the current behaviour.
