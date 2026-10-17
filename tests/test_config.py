@@ -24,7 +24,14 @@ def test_committed_config_matches_section_4_6():
         ("fixture", "tests/fixtures/idle-warehouse-waste.sqlite"),
         ("fixture2", "tests/fixtures/holiday-cookout-rush.sqlite"),
     ]
-    assert duck.relation_map == {"FIXTURE.MAIN": "fixture.main", "FIXTURE2.MAIN": "fixture2.main"}
+    assert duck.relation_map == {
+        "FIXTURE.MAIN": "fixture.main",
+        "FIXTURE2.MAIN": "fixture2.main",
+        "VIEWS.MAIN": "memory.main",
+    }
+    assert duck.rill_models == [
+        "warehouse_metering_enriched", "warehouse_metering_source", "warehouses_source",
+    ]
     assert duck.session.model_dump() == {
         "TimeZone": "UTC", "threads": 1, "preserve_insertion_order": True
     }

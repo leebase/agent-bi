@@ -1,0 +1,113 @@
+name: warehouse_metering_enriched
+description: Semantic model for VIEWS.MAIN.warehouse_metering_enriched
+tables:
+- name: warehouse_metering_enriched
+  description: Scanned from VIEWS.MAIN.warehouse_metering_enriched
+  base_table:
+    database: VIEWS
+    schema: MAIN
+    table: warehouse_metering_enriched
+  dimensions:
+  - name: warehouse_name
+    synonyms: []
+    description: Column "warehouse_name" (VARCHAR)
+    expr: '"warehouse_name"'
+    data_type: TEXT
+  - name: warehouse_size
+    synonyms: []
+    description: Column "warehouse_size" (VARCHAR)
+    expr: '"warehouse_size"'
+    data_type: TEXT
+  - name: cost_center
+    synonyms: []
+    description: Column "cost_center" (VARCHAR)
+    expr: '"cost_center"'
+    data_type: TEXT
+  time_dimensions:
+  - name: usage_day
+    synonyms: []
+    description: Column "usage_day" (DATE)
+    expr: '"usage_day"'
+    data_type: DATE
+  facts:
+  - name: credits_used_compute
+    description: Column "credits_used_compute" (DOUBLE)
+    expr: '"credits_used_compute"'
+    data_type: NUMBER
+  - name: credits_used_cloud_services
+    description: Column "credits_used_cloud_services" (DOUBLE)
+    expr: '"credits_used_cloud_services"'
+    data_type: NUMBER
+  - name: credits_used
+    description: Column "credits_used" (DOUBLE)
+    expr: '"credits_used"'
+    data_type: NUMBER
+  metrics:
+  - name: row_count
+    synonyms: []
+    description: Number of rows
+    expr: COUNT(*)
+  - name: total_credits_used_compute
+    synonyms: []
+    description: Sum of "credits_used_compute"
+    expr: SUM("credits_used_compute")
+  - name: avg_credits_used_compute
+    synonyms: []
+    description: Average of "credits_used_compute"
+    expr: AVG("credits_used_compute")
+  - name: total_credits_used_cloud_services
+    synonyms: []
+    description: Sum of "credits_used_cloud_services"
+    expr: SUM("credits_used_cloud_services")
+  - name: avg_credits_used_cloud_services
+    synonyms: []
+    description: Average of "credits_used_cloud_services"
+    expr: AVG("credits_used_cloud_services")
+  - name: total_credits_used
+    synonyms: []
+    description: Sum of "credits_used"
+    expr: SUM("credits_used")
+  - name: avg_credits_used
+    synonyms: []
+    description: Average of "credits_used"
+    expr: AVG("credits_used")
+  - name: distinct_warehouse_name
+    synonyms: []
+    description: Distinct "warehouse_name" values
+    expr: COUNT(DISTINCT "warehouse_name")
+  - name: distinct_warehouse_size
+    synonyms: []
+    description: Distinct "warehouse_size" values
+    expr: COUNT(DISTINCT "warehouse_size")
+  - name: distinct_cost_center
+    synonyms: []
+    description: Distinct "cost_center" values
+    expr: COUNT(DISTINCT "cost_center")
+verified_queries:
+- name: credits_by_cost_center
+  question: credits by cost center
+  verified_at: 1792193821
+  verified_by: sprint-6
+  sql: |-
+    SELECT
+      "cost_center" AS "cost_center",
+      SUM("credits_used") AS "total_credits_used"
+    FROM "VIEWS"."MAIN"."warehouse_metering_enriched"
+    WHERE 1=1
+    GROUP BY "cost_center"
+    ORDER BY "total_credits_used" DESC, "cost_center" ASC
+    LIMIT 1000
+- name: credits_by_size_by_month
+  question: credits by warehouse size by month
+  verified_at: 1792193821
+  verified_by: sprint-6
+  sql: |-
+    SELECT
+      "warehouse_size" AS "warehouse_size",
+      DATE_TRUNC('month', "usage_day") AS "time_bucket",
+      SUM("credits_used") AS "total_credits_used"
+    FROM "VIEWS"."MAIN"."warehouse_metering_enriched"
+    WHERE 1=1
+    GROUP BY "warehouse_size", "time_bucket"
+    ORDER BY "time_bucket" ASC, "total_credits_used" DESC, "warehouse_size" ASC
+    LIMIT 1000

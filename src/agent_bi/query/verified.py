@@ -39,10 +39,12 @@ def find_by_question(sidecar_verified: dict[str, Any], question: str) -> list[st
     )
 
 
-def current_verified_queries(sidecar_verified: dict[str, Any], model: Any) -> list[str]:
+def current_verified_queries(
+    sidecar_verified: dict[str, Any], model: Any, models_digest: str | None = None
+) -> list[str]:
     """Names of the verified queries whose stored ``semantic_digest`` equals the digest
-    computed now from ``model`` (§4.7): the *current*, non-stale ones. A query that references
-    a definition the model no longer has is stale."""
+    computed now from ``model`` and the current registered Rill model (§4.7): the *current*,
+    non-stale ones. A query that references a definition the model no longer has is stale."""
     from agent_bi.hashing import definition_digests, semantic_digest
     from agent_bi.query.contract import parse_query
 
@@ -50,7 +52,9 @@ def current_verified_queries(sidecar_verified: dict[str, Any], model: Any) -> li
     for name, rec in sorted(sidecar_verified.items()):
         q = parse_query((rec or {}).get("semantic_query"), f"verified_queries[{name}]")
         missing: list[str] = []
-        definition_digests(q, model, missing)
-        if not missing and (rec or {}).get("semantic_digest") == semantic_digest(q, model):
+        definition_digests(q, model, missing, models_digest)
+        if not missing and (rec or {}).get("semantic_digest") == semantic_digest(
+            q, model, models_digest
+        ):
             out.append(name)
     return out

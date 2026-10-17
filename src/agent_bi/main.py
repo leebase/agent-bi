@@ -87,11 +87,12 @@ def cmd_canvas_fork(args: argparse.Namespace) -> int:
 def cmd_init(args: argparse.Namespace) -> int:
     from agent_bi.initialize import run_init
 
-    result = run_init(Path(args.config), args.sqlite, args.table, args.model)
-    print(
-        f"attach: {'reused' if result.reused_attach else 'added'} alias {result.alias!r} for {args.sqlite}"
+    result = run_init(
+        Path(args.config), sqlite_arg=args.sqlite, table=args.table, model_name=args.model,
+        rill_model=args.rill_model,
     )
-    print(f"scan: {'created' if result.created else 'refreshed'} semantic/{args.model}.yaml")
+    print(f"attach: {'reused' if result.reused_attach else 'added'} alias {result.alias!r} for {result.source}")
+    print(f"scan: {'created' if result.created else 'refreshed'} semantic/{args.model or args.rill_model}.yaml")
     for path in result.published:
         print(f"wrote {path}")
     print(f"manifest {result.manifest}")
@@ -310,9 +311,11 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--engine", choices=engines, required=True)
 
     def init_args(p):
-        p.add_argument("--sqlite", required=True)
-        p.add_argument("--table", required=True)
-        p.add_argument("--model", required=True)
+        form = p.add_mutually_exclusive_group(required=True)
+        form.add_argument("--sqlite")
+        form.add_argument("--rill-model", dest="rill_model")
+        p.add_argument("--table")
+        p.add_argument("--model")
 
     _add(sub, "scan", "Discover a relation and write the semantic model + sidecar", cmd_scan, scan_args)
     _add(sub, "validate", "Check the subset, grammars and sidecar consistency", cmd_validate, model_arg)
@@ -345,7 +348,7 @@ def build_parser() -> argparse.ArgumentParser:
         sub, "resolve", "Deterministically map a question onto semantic objects, or refuse",
         cmd_resolve, resolve_args,
     )
-    _add(sub, "init", "Scan, validate and compile a Rill project from a SQLite table", cmd_init, init_args)
+    _add(sub, "init", "Scan, validate and compile a Rill project from a SQLite table or a registered Rill model", cmd_init, init_args)
     _add(sub, "snowflake-load", "Create the Semantic View in Snowflake", ni("snowflake-load"), model_arg)
     return parser
 

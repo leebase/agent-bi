@@ -1,0 +1,51 @@
+{
+  "name": "credits_by_cost_center",
+  "query_hash": "sha256:327ac7e64bcd42aa206e8dff6430cd73e35d792ae4dd327dafd5d72c052c7650",
+  "semantic_digest": "sha256:0b77b17b5f2747639f5bbd149a2298459371175666781e46900a79275516d727",
+  "definition_digests": {
+    "base_table": "sha256:0c586ca6f9c653498f16c71ffc7ed3d5514f7c8418c80b5ee2f87076e69aeef0",
+    "models_digest": "sha256:3b088bce64b793c814ed0e95a7e49d7110ea70d9d2b014ba84cfb017553242d2",
+    "cost_center": "sha256:efbbf0a4b73ea019ed0c0f4c3aacdbf8c2af4f11f0364d9bff705d68158d5c2a",
+    "total_credits_used": "sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "warehouse_metering_enriched",
+    "table": "warehouse_metering_enriched",
+    "metrics": [
+      "total_credits_used"
+    ],
+    "dimensions": [
+      "cost_center"
+    ],
+    "filters": [],
+    "named_filters": [],
+    "order_by": [],
+    "limit": 1000
+  },
+  "expected": {
+    "columns": [
+      "cost_center",
+      "total_credits_used"
+    ],
+    "rows": [
+      [
+        "FIN",
+        2739.0
+      ],
+      [
+        "MKT",
+        1093.0
+      ],
+      [
+        "DATA",
+        544.0
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT w.cost_center AS cost_center, SUM(m.credits_used) AS total_credits_used FROM warehouse_metering_history m LEFT JOIN show_warehouses w ON w.name = m.warehouse_name GROUP BY w.cost_center ORDER BY total_credits_used DESC, cost_center ASC",
+  "expected_sql_by": "sprint-6",
+  "expected_at": "2026-10-16T23:37:01Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

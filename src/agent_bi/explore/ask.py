@@ -36,6 +36,7 @@ from agent_bi.query.contract import (
 )
 from agent_bi.query.files import load_query_file
 from agent_bi.query.verified import find_by_hash, normalize_question
+from agent_bi.rill_models import current_models_digest
 from agent_bi.semantic.model import load_model_dict
 from agent_bi.semantic.provenance import entry_key, load_sidecar_dict
 from agent_bi.semantic.scan import paths_for
@@ -114,7 +115,7 @@ def _iso(epoch: Any) -> str:
 
 def compute_trust(
     query: SemanticQuery, model: dict[str, Any], sidecar: dict[str, Any], q_hash: str,
-    digest: str, definitions: dict[str, dict[str, Any]],
+    digest: str, definitions: dict[str, dict[str, Any]], models_digest: str | None = None,
 ) -> tuple[str, str, str | None]:
     """``(trust, trust_reason, verified_against)``; first matching row of the §4.7 table wins."""
     records = sidecar.get("verified_queries") or {}
@@ -130,7 +131,7 @@ def compute_trust(
         name = names[0]
         rec = records[name]
         removed: list[str] = []
-        now = definition_digests(query, model, removed)
+        now = definition_digests(query, model, removed, models_digest)
         changed = _changed_definitions(rec.get("definition_digests") or {}, now, removed)
         yaml_vq = next((v for v in model.get("verified_queries") or [] if v.get("name") == name), {})
         since = _iso(yaml_vq.get("verified_at"))
@@ -250,9 +251,14 @@ def run_ask(
         assert query_file is not None
         raw, source = load_query_file(query_file), query_file
     q = validate_against_model(parse_query(raw, source), model).canonical()  # step 2
-    q_hash, digest = query_hash(q), semantic_digest(q, model)  # step 3
+    models_digest = current_models_digest(
+        config.base_dir / config.rill.project_dir, model, config.engines.duckdb.rill_models
+    )
+    q_hash, digest = query_hash(q), semantic_digest(q, model, models_digest)  # step 3
     definitions = referenced_with_status(q, model, sidecar)
-    trust, reason, against = compute_trust(q, model, sidecar, q_hash, digest, definitions)
+    trust, reason, against = compute_trust(
+        q, model, sidecar, q_hash, digest, definitions, models_digest
+    )
     published = components.is_published(project_dir, config, q_hash, digest)
 
     engine_name = engine_name or "duckdb"
@@ -260,7 +266,7 @@ def run_ask(
     engine = open_engine(engine_name, config)
     try:
         base = model["tables"][0]["base_table"]
-        alias = engine.resolve_relation(base["database"], base["schema"])[0]
+        alias = engine.data_alias(base["database"], base["schema"], base["table"])
         compiled = compile_query(  # step 4
             q, model, engine_name, relation_map=config.engines.duckdb.relation_map
         )
@@ -280,7 +286,7 @@ def run_ask(
             "semantic_digest": digest,
             "model_file_sha256": sha256_bytes(model_path.read_bytes()),
             "sidecar_sha256": sidecar_digest(sidecar_bytes),
-            "models_digest": (sidecar.get("relation") or {}).get("models_digest"),
+            "models_digest": models_digest,
             "definitions": definitions,
             "compiled_sql": compiled.compiled_sql,
             "compiled_sql_sha256": sha256_text(compiled.compiled_sql),

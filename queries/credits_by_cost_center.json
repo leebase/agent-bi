@@ -1,0 +1,24 @@
+{
+  "schema_version": "agent-bi-saved-query/1.0",
+  "name": "credits_by_cost_center",
+  "status": "verified",
+  "question": "credits by cost center",
+  "question_normalized": "credits by cost center",
+  "query_hash": "sha256:327ac7e64bcd42aa206e8dff6430cd73e35d792ae4dd327dafd5d72c052c7650",
+  "semantic_digest": "sha256:0b77b17b5f2747639f5bbd149a2298459371175666781e46900a79275516d727",
+  "semantic_query": {
+    "dimensions": [
+      "cost_center"
+    ],
+    "filters": [],
+    "limit": 1000,
+    "metrics": [
+      "total_credits_used"
+    ],
+    "model": "warehouse_metering_enriched",
+    "named_filters": [],
+    "order_by": [],
+    "schema_version": "semantic-query/1.0",
+    "table": "warehouse_metering_enriched"
+  }
+}

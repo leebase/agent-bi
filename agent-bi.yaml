@@ -9,6 +9,11 @@ engines:
     relation_map:                        # semantic base_table (DATABASE.SCHEMA) -> duckdb catalog.schema (DuckDB only)
       "FIXTURE.MAIN": "fixture.main"
       "FIXTURE2.MAIN": "fixture2.main"
+      "VIEWS.MAIN": "memory.main"
+    rill_models:
+      - warehouse_metering_enriched
+      - warehouse_metering_source
+      - warehouses_source
     session:                             # fixed; applied on connect and recorded in every receipt
       TimeZone: UTC
       threads: 1

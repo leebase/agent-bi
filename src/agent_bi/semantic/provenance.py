@@ -38,6 +38,8 @@ class RelationInfo(_Obj):
     kind: str
     row_count: int
     columns_digest: str
+    source: str | None = None  # view models only: rill/models/<name>.sql (§5.13 rule 6)
+    dependencies: list[str] | None = None  # view models only: closure paths minus the model
     models_digest: str | None = None
 
 

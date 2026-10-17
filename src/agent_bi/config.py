@@ -36,6 +36,7 @@ class DuckDBConfig(_Base):
     database: str = ":memory:"
     attach: list[Attach] = Field(default_factory=list)
     relation_map: dict[str, str] = Field(default_factory=dict)
+    rill_models: list[str] = Field(default_factory=list)
     session: DuckDBSession = Field(default_factory=DuckDBSession)
 
 

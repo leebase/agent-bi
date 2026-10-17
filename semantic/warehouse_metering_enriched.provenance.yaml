@@ -1,0 +1,176 @@
+schema_version: agent-bi-provenance/1.0
+model: warehouse_metering_enriched
+scanned_at: '2026-10-16T23:36:47Z'
+engine: duckdb
+engine_version: 1.5.6
+source:
+  kind: sqlite
+  path_or_account: tests/fixtures/idle-warehouse-waste.sqlite
+  as_of_digest: sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece
+relation:
+  physical: VIEWS.MAIN.warehouse_metering_enriched
+  kind: view
+  row_count: 21
+  columns_digest: sha256:98d690dd0d2b0cd008db723cd90850253b93bef1404ba034038d8b31b78812e4
+  source: rill/models/warehouse_metering_enriched.sql
+  dependencies:
+  - rill/models/warehouse_metering_source.sql
+  - rill/models/warehouses_source.sql
+  models_digest: sha256:3b088bce64b793c814ed0e95a7e49d7110ea70d9d2b014ba84cfb017553242d2
+entries:
+  tables[0].dimensions[warehouse_name]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:65125159377db5d34112370b2829c7af7ca906cc49b3cf844545e97969ff8367
+    unique: false
+  tables[0].dimensions[warehouse_size]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:54e9cf1481af8fd706fb289c3800f237fd3d28470479f661b20a23e6ed65b68f
+    unique: false
+  tables[0].dimensions[cost_center]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:efbbf0a4b73ea019ed0c0f4c3aacdbf8c2af4f11f0364d9bff705d68158d5c2a
+    unique: false
+  tables[0].time_dimensions[usage_day]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:bb081e12cd1ef39b34688b24c0aa57320018e35c3dcd412867cae0f69cdbce6c
+    unique: false
+  tables[0].facts[credits_used_compute]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:2b48e0e7755056f8e97032a9c6122f6c64bc3cf2a68f1bfd180ff4d5d535f1ab
+  tables[0].facts[credits_used_cloud_services]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:d3a0da78323a2652c30488d9ef78ac76ff6ca2b3ffff03c8f361951f051e3c82
+  tables[0].facts[credits_used]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:02d349ef6c4d4e60cda06dba83165db7028723202df94fe45d48b8e833f48415
+  tables[0].metrics[row_count]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:1464b4c5bc20377961e5849993a762c16d19ac1081eaec971d4a10800efd9b17
+  tables[0].metrics[total_credits_used_compute]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:b6916ccb354ea74a38432292cf586a9159337678f1b28299d8b5fb37e257dd28
+  tables[0].metrics[avg_credits_used_compute]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:b42b856c21ed70151d9d22cb5f6dfbb901c3095042ab6641363a0e0ae66fdc21
+  tables[0].metrics[total_credits_used_cloud_services]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:ad3355fa9fe897700b756b1d17086210a789eeb6c956d16e064e5f0a14656aad
+  tables[0].metrics[avg_credits_used_cloud_services]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:f1df28e644bc99345a3a2fb5ea319a7149cda59f3b2519430578035837cf4d50
+  tables[0].metrics[total_credits_used]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+  tables[0].metrics[avg_credits_used]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:4f501ff686f7a2c3626ee8fd188ead1d647d17a0e9fa859ea5e2f3bd7359faa0
+  tables[0].metrics[distinct_warehouse_name]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:feb50effb4c549e18da29f12b6549a297996bf0cf8161f473cd42f156d32add7
+  tables[0].metrics[distinct_warehouse_size]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:fa8d6ae6a872dca89142df8e2a9a1ccdf4fa9931bcdfac985195806ad0e9652e
+  tables[0].metrics[distinct_cost_center]:
+    status: catalog
+    origin: scan
+    at: '2026-10-16T22:39:04Z'
+    by: scan
+    expr_sha256: sha256:1a3ebe4f62179b40b444a31ca20f6f1bf3cc69c3d7cf6526cf407117d3e78ab4
+verified_queries:
+  credits_by_cost_center:
+    query_hash: sha256:327ac7e64bcd42aa206e8dff6430cd73e35d792ae4dd327dafd5d72c052c7650
+    semantic_digest: sha256:0b77b17b5f2747639f5bbd149a2298459371175666781e46900a79275516d727
+    definition_digests:
+      base_table: sha256:0c586ca6f9c653498f16c71ffc7ed3d5514f7c8418c80b5ee2f87076e69aeef0
+      models_digest: sha256:3b088bce64b793c814ed0e95a7e49d7110ea70d9d2b014ba84cfb017553242d2
+      cost_center: sha256:efbbf0a4b73ea019ed0c0f4c3aacdbf8c2af4f11f0364d9bff705d68158d5c2a
+      total_credits_used: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: warehouse_metering_enriched
+      table: warehouse_metering_enriched
+      metrics:
+      - total_credits_used
+      dimensions:
+      - cost_center
+      filters: []
+      named_filters: []
+      order_by: []
+      limit: 1000
+    question_normalized: credits by cost center
+    known_answer: tests/fixtures/known-answers/warehouse_metering_enriched/credits_by_cost_center.json
+  credits_by_size_by_month:
+    query_hash: sha256:9a2f2e7ef5eab89b8f9416e4662b27733961234e6b7c1951a5d7fbdc4270cb5a
+    semantic_digest: sha256:9f55ab33ee689c96af67954eec6a0114ba8771706d9326937a193b5d731ff7f5
+    definition_digests:
+      base_table: sha256:0c586ca6f9c653498f16c71ffc7ed3d5514f7c8418c80b5ee2f87076e69aeef0
+      models_digest: sha256:3b088bce64b793c814ed0e95a7e49d7110ea70d9d2b014ba84cfb017553242d2
+      total_credits_used: sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a
+      usage_day: sha256:bb081e12cd1ef39b34688b24c0aa57320018e35c3dcd412867cae0f69cdbce6c
+      warehouse_size: sha256:54e9cf1481af8fd706fb289c3800f237fd3d28470479f661b20a23e6ed65b68f
+    semantic_query:
+      schema_version: semantic-query/1.0
+      model: warehouse_metering_enriched
+      table: warehouse_metering_enriched
+      metrics:
+      - total_credits_used
+      dimensions:
+      - warehouse_size
+      time:
+        dimension: usage_day
+        grain: month
+      filters: []
+      named_filters: []
+      order_by: []
+      limit: 1000
+    question_normalized: credits by warehouse size by month
+    known_answer: tests/fixtures/known-answers/warehouse_metering_enriched/credits_by_size_by_month.json
+ignored_columns: []

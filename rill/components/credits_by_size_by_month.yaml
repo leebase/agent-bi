@@ -1,0 +1,10 @@
+# agent_bi_query_hash: sha256:9a2f2e7ef5eab89b8f9416e4662b27733961234e6b7c1951a5d7fbdc4270cb5a
+# agent_bi_semantic_digest: sha256:9f55ab33ee689c96af67954eec6a0114ba8771706d9326937a193b5d731ff7f5
+# agent_bi_sql_sha256: sha256:d9964518e1faad27b70cc41001edc573f73dbc1ced60ddff322d5af4129dc027
+type: component
+display_name: credits_by_size_by_month
+custom_chart:
+  metrics_view: warehouse_metering_enriched
+  metrics_sql:
+    - SELECT warehouse_size, date_trunc('MONTH', usage_day) AS time_bucket, total_credits_used FROM warehouse_metering_enriched ORDER BY time_bucket ASC, total_credits_used DESC, warehouse_size ASC LIMIT 1000
+  vega_spec: '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"name":"query1"},"mark":"line","encoding":{"x":{"field":"time_bucket","type":"temporal"},"y":{"field":"total_credits_used","type":"quantitative","axis":{"format":",.0f"}},"color":{"field":"warehouse_size","type":"nominal"},"tooltip":[{"field":"time_bucket","type":"temporal"},{"field":"warehouse_size","type":"nominal"},{"field":"total_credits_used","type":"quantitative"}]},"width":"container","height":"container","autosize":{"type":"fit"},"config":{}}'

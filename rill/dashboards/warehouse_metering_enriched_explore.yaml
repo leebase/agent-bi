@@ -1,0 +1,6 @@
+# agent-bi: generated from semantic/warehouse_metering_enriched.yaml — do not edit; edit the semantic model and re-run compile-rill
+type: explore
+display_name: warehouse_metering_enriched
+metrics_view: warehouse_metering_enriched
+defaults:
+  time_range: inf

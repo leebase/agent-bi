@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from agent_bi.config import CONFIG_FILENAME, load_config
+from agent_bi.engines import DuckDBEngine
 from agent_bi.errors import AgentBiError, validation_error
 from agent_bi.hashing import expr_sha256
 from agent_bi.query.compile import (
@@ -14,6 +16,7 @@ from agent_bi.query.compile import (
     METRIC_RE,
     expr_columns,
 )
+from agent_bi.rill_models import check_closure, rill_dir_for_config
 from agent_bi.semantic.model import SemanticModel, load_model_dict, parse_model
 from agent_bi.semantic.names import check_global_namespace, table_objects
 from agent_bi.semantic.provenance import (
@@ -147,13 +150,13 @@ def _check_sidecar(model: SemanticModel, sidecar: dict[str, Any], model_name: st
                 f"verified_queries[{vq_name}]: definition_digests is required "
                 "(it names what changed when the query goes STALE)",
             )
-        allowed = {"base_table", *_query_names((rec or {}).get("semantic_query"))}
+        allowed = {"base_table", "models_digest", *_query_names((rec or {}).get("semantic_query"))}
         stray = sorted(set(digests) - allowed)
         if stray:
             raise validation_error(
                 "PROVENANCE_MISMATCH",
-                f"verified_queries[{vq_name}].definition_digests[{stray[0]}]: not base_table "
-                "or a definition the query references",
+                f"verified_queries[{vq_name}].definition_digests[{stray[0]}]: not base_table, "
+                "models_digest or a definition the query references",
             )
     yaml_vqs = {v.name for v in (model.verified_queries or [])}
     side_vqs = set((sidecar.get("verified_queries") or {}).keys())
@@ -164,11 +167,36 @@ def _check_sidecar(model: SemanticModel, sidecar: dict[str, Any], model_name: st
         )
 
 
+def _check_registered_view(
+    model_dict: dict[str, Any], sidecar_dict: dict[str, Any], semantic_dir: Path
+) -> None:
+    """§5.13 rules 2/3 over the registered model's closure and the build-validity invariant
+    (rule 5): a view model validates only when every model in its closure builds. Table
+    models are untouched."""
+    table = (model_dict.get("tables") or [{}])[0]
+    base = table.get("base_table") or {}
+    if str(base.get("database", "")).upper() != "VIEWS" or str(base.get("schema", "")).upper() != "MAIN":
+        return
+    project_dir = Path(semantic_dir).parent
+    config = load_config(project_dir / CONFIG_FILENAME)
+    rill_dir = rill_dir_for_config(config.base_dir, config.rill.project_dir)
+    check_closure(rill_dir, base.get("table"), config.engines.duckdb.rill_models)
+    engine = DuckDBEngine(config)
+    try:
+        # The engine records a model that rule 2/3 or view creation failed as unavailable
+        # (D431); ``data_alias`` raises that recorded error, so validate never reports OK
+        # for a view model whose graph does not build.
+        engine.data_alias(base.get("database"), base.get("schema"), base.get("table"))
+    finally:
+        engine.close()
+
+
 def validate(model_name: str, semantic_dir: Path) -> None:
     model_path, sidecar_path = paths_for(semantic_dir, model_name)
     model_dict = load_model_dict(str(model_path))
     sidecar_dict = load_sidecar_dict(sidecar_path)
     try:
         validate_model(model_dict, sidecar_dict, model_name)
+        _check_registered_view(model_dict, sidecar_dict, semantic_dir)
     except AgentBiError as exc:
         raise AgentBiError(exc.code, f"{model_path}: {exc.message}", exc.exit_code) from exc

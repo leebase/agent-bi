@@ -1,7 +1,15 @@
 # Agent BI
 
-**A table becomes a dashboard and a queryable semantic model. Engines compute the
-numbers; an agent can help you ask for them.**
+**The deterministic trust and control plane for agent-built analytics on Rill.**
+
+Rill runs the transformations, the metrics layer and the dashboards. Agent BI answers the
+questions Rill does not: who defined this metric, has a human accepted its meaning, what
+independent evidence verifies it, has anything it depends on changed, can an agent change
+it without silently changing what "governed" means, and can this question be answered
+deterministically without asking an LLM. Agent BI does not replace Rill capabilities: when
+Rill can deterministically perform an analytics operation, Agent BI adopts it and adds
+provenance, verification, human acceptance, staleness detection and agent-change
+governance where required.
 
 Agent BI scans a local SQLite table, generates a Snowflake-format semantic YAML model,
 compiles a Rill dashboard, and answers questions with SQL, provenance and an explicit
@@ -9,11 +17,11 @@ trust label. The Python CLI calls no language model. An optional Claude Code ski
 tries known questions and a deterministic resolver first, then proposes a constrained
 query when the resolver cannot interpret the question.
 
-**Status: 0.1.0 / M1 accepted.** Supported today: one local SQLite table per model,
-DuckDB execution, Rill **v0.90.5**, saved charts, known-answer verification, SQL-free
-enrichment patches applied transactionally, and a read-only drift preview. The accepted
-version has also been consumed by a separate marketing decision-demo project. Views and
-Snowflake execution are future work.
+**Status: 0.1.0 / M1 accepted; M2 "Trust Rill models" implemented.** Supported today:
+one local relation per model, operator-authored Rill SQL models (views) executed
+verbatim on both DuckDB and Rill, DuckDB execution, Rill **v0.90.5**, saved charts,
+known-answer verification, SQL-free enrichment patches applied transactionally, and a
+read-only drift preview. Snowflake execution is future work.
 
 ## Try the included example
 
@@ -56,6 +64,37 @@ agent-bi verify --model idle_warehouse_waste --engine rill
 ```
 
 This checks the nine known answers through Rill and confirms it is serving this project.
+
+## Combine tables with a Rill model
+
+Rill performs the join; Agent BI never writes, rewrites or translates it. Build the graph
+the way Rill supports it: one ordinary single-table **source model** per table, each with
+its own `sqlite_scan(...)`, and an ordinary **join model** that references the sources by
+name — for example `rill/models/warehouse_metering_source.sql`, 
+`rill/models/warehouses_source.sql` and `rill/models/warehouse_metering_enriched.sql`
+(the join). Register the top model:
+
+```bash
+agent-bi init --rill-model warehouse_metering_enriched
+agent-bi verify --model warehouse_metering_enriched
+```
+
+`init` registers `warehouse_metering_enriched` **and every model in its dependency
+closure** (`rill_models`), adds the `"VIEWS.MAIN": "memory.main"` mapping and the
+attachment for the graph's SQLite file to `agent-bi.yaml`, scans
+`VIEWS.MAIN.warehouse_metering_enriched`, and generates the metrics view, explore and
+default canvas. Only the model you name is scanned; its upstream models are registered
+but get no semantic model unless you initialize them yourself.
+
+Every operator file is executed verbatim by DuckDB and by Rill. The sidecar records the
+closure's `relation.dependencies` and `models_digest`: the sha256 of the canonical
+`{name: normalized file digest}` map over the whole closure (CRLF and trailing whitespace
+ignored). Changing the join model **or any model upstream of it at any depth** changes
+that digest and makes every verification of the model `STALE` until you re-run the
+independent route (`save --verify --force --expected-sql "<human SQL>"`); changing an
+unrelated registered model does not. The closed form, the dependency rule's
+false-positive-only asymmetry and the documented limits are in the
+[user guide](docs/user-guide.md#combine-tables-with-a-rill-model).
 
 ## Ask through Claude Code
 

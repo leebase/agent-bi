@@ -36,12 +36,22 @@ BREAKDOWN_COUNT = 2
 
 
 def generated_paths(model: str) -> list[str]:
-    """Paths (under the Rill project dir) that ``compile-rill`` owns for ``model``; the
+    """Paths (under the Rill project dir) that ``compile-rill`` owns for a table ``model``; the
     manifest lists exactly these, in the §5.14 publish order (``fs_txn.publish_rank`` then path).
     ``rill/provenance/*`` is owned too but is not hashed."""
     return [
         "rill.yaml",
         f"models/{model}.sql",
+        f"metrics/{model}.yaml",
+        f"dashboards/{model}_default_canvas.yaml",
+        f"dashboards/{model}_explore.yaml",
+    ]
+
+
+def generated_paths_view(model: str) -> list[str]:
+    """Generated paths for a view model: no ``models/<model>.sql`` (§5.13 rule 7, ADR-009)."""
+    return [
+        "rill.yaml",
         f"metrics/{model}.yaml",
         f"dashboards/{model}_default_canvas.yaml",
         f"dashboards/{model}_explore.yaml",
@@ -121,9 +131,9 @@ def render_rill_yaml(model: str, project_name: str) -> str:
     )
 
 
-def render_metrics_view(model: str, table: dict[str, Any]) -> str:
+def render_metrics_view(model: str, table: dict[str, Any], rill_model: str | None = None) -> str:
     out = [yaml_header(model).rstrip("\n"), "type: metrics_view", f"display_name: {_y(model)}",
-           f"model: {_y(model)}"]
+           f"model: {_y(rill_model or model)}"]
     time_dims = table.get("time_dimensions") or []
     if time_dims:
         out.append(f"timeseries: {_y(time_dims[0]['name'])}")
@@ -211,7 +221,7 @@ def render(
     columns: list[str],
     source_path: str,
 ) -> dict[str, str]:
-    """All generated Rill files for one model, keyed by path under the Rill project dir."""
+    """All generated Rill files for one table model, keyed by path under the Rill project dir."""
     model = model_dict["name"]
     table = model_dict["tables"][0]
     source_table = table["base_table"]["table"]
@@ -219,6 +229,27 @@ def render(
         "rill.yaml": render_rill_yaml(model, project_name),
         f"models/{model}.sql": render_model_sql(model, table, columns, source_path, source_table),
         f"metrics/{model}.yaml": render_metrics_view(model, table),
+        f"dashboards/{model}_explore.yaml": render_explore(model),
+        f"dashboards/{model}_default_canvas.yaml": render_default_canvas(
+            model, table, sidecar_dict
+        ),
+    }
+
+
+def render_view(
+    model_dict: dict[str, Any],
+    sidecar_dict: dict[str, Any],
+    *,
+    project_name: str,
+    rill_model: str,
+) -> dict[str, str]:
+    """All generated Rill files for one view model (§5.13 rule 7): the operator's
+    ``models/<rill_model>.sql`` is never generated; the metrics view references it by name."""
+    model = model_dict["name"]
+    table = model_dict["tables"][0]
+    return {
+        "rill.yaml": render_rill_yaml(model, project_name),
+        f"metrics/{model}.yaml": render_metrics_view(model, table, rill_model=rill_model),
         f"dashboards/{model}_explore.yaml": render_explore(model),
         f"dashboards/{model}_default_canvas.yaml": render_default_canvas(
             model, table, sidecar_dict

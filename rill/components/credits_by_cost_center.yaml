@@ -1,0 +1,10 @@
+# agent_bi_query_hash: sha256:327ac7e64bcd42aa206e8dff6430cd73e35d792ae4dd327dafd5d72c052c7650
+# agent_bi_semantic_digest: sha256:0b77b17b5f2747639f5bbd149a2298459371175666781e46900a79275516d727
+# agent_bi_sql_sha256: sha256:22b5b164b363d482126d0f62d6b95ab1e5786ae3e630e9a97fcf039ef7cdd9fa
+type: component
+display_name: credits_by_cost_center
+custom_chart:
+  metrics_view: warehouse_metering_enriched
+  metrics_sql:
+    - SELECT cost_center, total_credits_used FROM warehouse_metering_enriched ORDER BY total_credits_used DESC, cost_center ASC LIMIT 1000
+  vega_spec: '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"name":"query1"},"mark":"bar","encoding":{"x":{"field":"cost_center","type":"nominal","sort":"-y"},"y":{"field":"total_credits_used","type":"quantitative","axis":{"format":",.0f"}},"tooltip":[{"field":"cost_center","type":"nominal"},{"field":"total_credits_used","type":"quantitative"}]},"width":"container","height":"container","autosize":{"type":"fit"},"config":{}}'

@@ -20,6 +20,7 @@ from agent_bi.engines import DuckDBEngine
 from agent_bi.errors import engine_error, validation_error
 from agent_bi.hashing import expr_sha256
 from agent_bi.query.compile import expr_columns
+from agent_bi.rill_models import current_models_digest, source_rel
 from agent_bi.semantic.model import (
     BaseTable,
     Dimension,
@@ -246,7 +247,26 @@ def build_model(
 def _sidecar(
     engine: DuckDBEngine, relation: Relation, model_name: str, alias: str,
     entries: dict[str, Any], ignored: list[dict[str, str]], now: str, as_of_digest: str,
+    model: dict[str, Any],
 ) -> dict[str, Any]:
+    relation_info: dict[str, Any] = {
+        "physical": f"{relation.database}.{relation.schema}.{relation.name}",
+        "kind": relation.kind,
+        "row_count": relation.row_count,
+        "columns_digest": relation.columns_digest,
+    }
+    if relation.kind == "view":  # §5.13 rule 6: the registered operator model backs it
+        models_digest = current_models_digest(
+            engine.rill_dir, model, engine.registered_rill_models
+        )
+        if models_digest is not None:
+            relation_info["source"] = source_rel(engine.rill_rel, relation.name)
+            relation_info["dependencies"] = sorted(
+                source_rel(engine.rill_rel, member)
+                for member in engine.rill_closure(relation.name)
+                if member != relation.name
+            )
+            relation_info["models_digest"] = models_digest
     sc = ProvenanceSidecar(
         schema_version=SCHEMA_VERSION,
         model=model_name,
@@ -258,12 +278,7 @@ def _sidecar(
             "path_or_account": engine.configured_path(alias),
             "as_of_digest": as_of_digest,
         },
-        relation={
-            "physical": f"{relation.database}.{relation.schema}.{relation.name}",
-            "kind": relation.kind,
-            "row_count": relation.row_count,
-            "columns_digest": relation.columns_digest,
-        },
+        relation=relation_info,
         entries=entries,
         verified_queries={},
         ignored_columns=ignored,
@@ -524,16 +539,16 @@ def plan_scan(
 
     now = now or utc_now()
     database, schema, table = parse_relation_ref(relation_ref)
-    catalog_name, _ = engine.resolve_relation(database, schema)
-    before = engine.as_of(catalog_name).value
+    alias = engine.data_alias(database, schema, table)
+    before = engine.as_of(alias).value
     relation = DuckDBCatalog(engine).describe(database, schema, table)
-    after = engine.as_of(catalog_name).value
+    after = engine.as_of(alias).value
     if before != after:
-        raise engine_error("SNAPSHOT_CHANGED", f"{engine.attach_path(catalog_name)} changed during scan")
+        raise engine_error("SNAPSHOT_CHANGED", f"{engine.attach_path(alias)} changed during scan")
 
     objs, entries, ignored, primary_key = generate(relation, model_name, now)
     model = build_model(relation, model_name, objs, primary_key)
-    sidecar = _sidecar(engine, relation, model_name, catalog_name, entries, ignored, now, before)
+    sidecar = _sidecar(engine, relation, model_name, alias, entries, ignored, now, before, model)
 
     if refresh:
         existing_model = load_model_dict(str(model_path))

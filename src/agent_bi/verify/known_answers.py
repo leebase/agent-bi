@@ -22,6 +22,7 @@ from agent_bi.errors import AgentBiError, validation_error
 from agent_bi.hashing import definition_digests, semantic_digest
 from agent_bi.query.compile import compile as compile_query
 from agent_bi.query.contract import parse_query, query_hash
+from agent_bi.rill_models import current_models_digest
 from agent_bi.semantic.model import load_model_dict
 from agent_bi.semantic.provenance import entry_key, load_sidecar_dict
 from agent_bi.semantic.scan import paths_for
@@ -187,7 +188,11 @@ def verify(
         if engine is None:  # bind to this project's Rill before anything else (A1, D396)
             recheck_binding()
         alias = (
-            engine.resolve_relation(base["database"], base["schema"])[0] if engine else None
+            engine.data_alias(base["database"], base["schema"], base["table"])
+            if engine else None
+        )
+        models_digest = current_models_digest(
+            config.base_dir / config.rill.project_dir, model, config.engines.duckdb.rill_models
         )
         queries = [v["name"] for v in model.get("verified_queries") or []]
         stale: set[str] = set()
@@ -196,8 +201,8 @@ def verify(
             ka = _load_known_answer(project_dir, rec, model_name, name)
             q = parse_query(rec["semantic_query"], f"verified_queries[{name}].semantic_query")
             removed: list[str] = []
-            current_defs = definition_digests(q, model, removed)
-            current_digest = None if removed else semantic_digest(q, model)
+            current_defs = definition_digests(q, model, removed, models_digest)
+            current_digest = None if removed else semantic_digest(q, model, models_digest)
             stored = {rec.get("semantic_digest"), ka.get("semantic_digest")}
             if stored != {current_digest}:
                 stale.add(name)

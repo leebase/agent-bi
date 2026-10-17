@@ -9,7 +9,8 @@ from agent_bi import fs_txn
 from agent_bi.config import load_config
 from agent_bi.errors import AgentBiError
 from agent_bi.targets import rill as rill_target
-from tests.s3_helpers import MODEL, make_project, tree_hash
+from tests.s3_helpers import MODEL, tree_hash
+from tests.s6_helpers import make_project
 
 
 def test_publish_writes_every_output_and_removes_the_temp_dir(tmp_path):
@@ -105,7 +106,9 @@ def test_compile_rill_is_a_write_transaction(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="injected"):
         compile_mod.compile_rill(MODEL, load_config(project / "agent-bi.yaml"), project)
     assert tree_hash(project) == before
-    assert not (project / "rill").exists()
+    # the committed Rill tree was already there; the failed transaction added nothing to it
+    assert not (project / "rill" / "metrics").exists()
+    assert not (project / "rill" / "dashboards").exists()
 
 
 def test_compile_rill_failure_while_staging_changes_nothing(tmp_path, monkeypatch):

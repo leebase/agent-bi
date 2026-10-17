@@ -28,6 +28,11 @@ from agent_bi.explore.save import _saved_query_doc
 from agent_bi.hashing import expr_sha256, semantic_digest
 from agent_bi.query.compile import METRIC_RE, expr_columns
 from agent_bi.query.contract import parse_query, query_hash, validate_against_model
+from agent_bi.rill_models import (
+    current_models_digest,
+    registered_names_from_project,
+    rill_dir_from_source,
+)
 from agent_bi.semantic.model import dump_yaml, load_model_dict
 from agent_bi.semantic.names import RESERVED_NAMES
 from agent_bi.semantic.provenance import load_sidecar_dict
@@ -362,6 +367,11 @@ def apply_patch(
     model_path, sidecar_path = paths_for(semantic_dir, model_name)
     model = load_model_dict(str(model_path))
     sidecar = load_sidecar_dict(sidecar_path)
+    models_digest = current_models_digest(
+        rill_dir_from_source(project_dir, (sidecar.get("relation") or {}).get("source")),
+        model,
+        registered_names_from_project(project_dir),
+    )
     tables = model.get("tables") or []
     if len(tables) != 1:
         raise validation_error(
@@ -501,7 +511,7 @@ def apply_patch(
         canonical = q.canonical()
         outputs[query_rel] = _saved_query_doc(
             value.name, "proposed", value.question, query_hash(canonical),
-            semantic_digest(canonical, model), canonical.canonical_dict(),
+            semantic_digest(canonical, model, models_digest), canonical.canonical_dict(),
         )
 
     return fs_txn.publish(project_dir, outputs)

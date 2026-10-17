@@ -9,6 +9,7 @@ to its `bin/agent-bi`. Run from the analysis project's root, or put
 | Command | Use |
 |---|---|
 | `init --sqlite FILE --table TABLE --model MODEL` | Attach a SQLite table, scan/refresh its model, generate Rill files. Requires config. |
+| `init --rill-model NAME [--model MODEL]` | Register an operator Rill SQL model and its dependency closure (single-table `sqlite_scan` source models plus a join model), attach the graph's SQLite file, scan/refresh the named model and generate Rill files. `--model` defaults to `NAME`. |
 | `scan --engine duckdb --relation DB.SCHEMA.TABLE --model MODEL [--refresh]` | Scan an existing configured attachment. |
 | `validate --model MODEL` | Validate semantic definitions and provenance consistency. |
 | `compile-rill --model MODEL` | Generate Rill files and refresh the build manifest. |
@@ -27,6 +28,8 @@ to its `bin/agent-bi`. Run from the analysis project's root, or put
 
 `ask` accepts exactly one of `--question` and `--query-file`. For the full flags use
 `agent-bi <command> --help`.
+
+`init --rill-model` registers the operator's `rill/models/<name>.sql` **and every model in its dependency closure** (transitive, case-insensitive whole-word name matches: over the operator-owned files at `init`, over the registered names at engine start); Agent BI never writes, rewrites or translates any of those files. `compile-rill` for a view model writes the metrics view, explore, default canvas and manifest and no `rill/models` file; for a table model it refuses (`E_OPERATOR_FILE`) to overwrite an existing `rill/models/<model>.sql` without the generated header. The closed form is checked at every engine start and by `validate`, per file and per closure: refusals are `E_UNSUPPORTED_VIEW_FORM` (annotations, templating, non-SELECT, multiple statements, external readers, non-literal or multiple `sqlite_scan` calls, missing file, generated header, more than one SQLite file in the closure, a dependency cycle, an unresolvable relation, or a view that DuckDB cannot create) and `E_NONDETERMINISTIC_VIEW` (`CURRENT_DATE`, `NOW`, `RANDOM`, `SAMPLE` and the other denied words). A model that fails only its own closure refuses only its own commands; other relations keep working (D431).
 
 ## Exit codes used by the question workflow
 

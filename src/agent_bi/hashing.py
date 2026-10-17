@@ -71,17 +71,22 @@ def referenced_definitions(
     return dict(sorted(out.items()))
 
 
-def semantic_digest(query: Any, model: Any) -> str:
+def semantic_digest(query: Any, model: Any, models_digest: str | None = None) -> str:
     """The semantic digest of ``query`` against ``model`` (architecture §4.7): sha256 of the
-    canonical JSON of ``{base_table, definitions}``. Descriptions, synonyms, sample values
-    and sidecar statuses are not in it, so changing them does not change what a query
-    computes; changing any referenced ``expr`` or the ``base_table`` does. This is the only
-    implementation."""
+    canonical JSON of ``{base_table, definitions}``, plus ``models_digest`` when the model is
+    Rill-model-backed (§5.13 rule 4). Descriptions, synonyms, sample values and sidecar
+    statuses are not in it, so changing them does not change what a query computes; changing
+    any referenced ``expr``, the ``base_table`` or the registered Rill model does. This is the
+    only implementation."""
     m = model.to_dict() if hasattr(model, "to_dict") else model
     table = (m.get("tables") or [{}])[0]
-    return sha256_canonical(
-        {"base_table": table.get("base_table"), "definitions": referenced_definitions(query, m)}
-    )
+    payload: dict[str, Any] = {
+        "base_table": table.get("base_table"),
+        "definitions": referenced_definitions(query, m),
+    }
+    if models_digest is not None:
+        payload["models_digest"] = models_digest
+    return sha256_canonical(payload)
 
 
 def base_table_digest(model: Any) -> str:
@@ -91,12 +96,17 @@ def base_table_digest(model: Any) -> str:
 
 
 def definition_digests(
-    query: Any, model: Any, missing: list[str] | None = None
+    query: Any, model: Any, missing: list[str] | None = None,
+    models_digest: str | None = None,
 ) -> dict[str, str]:
-    """``{base_table: <digest>, <name>: expr_sha256, ...}`` with ``base_table`` first and the
-    referenced definitions in name order (§4.2). Diagnosis only: it names what changed when a
-    query goes STALE; identity and staleness are decided by ``semantic_digest`` alone."""
+    """``{base_table: <digest>, models_digest: <digest>, <name>: expr_sha256, ...}`` with
+    ``base_table`` first, ``models_digest`` immediately after it when the model is
+    Rill-model-backed, and the referenced definitions in name order (§4.2, §4.7). Diagnosis
+    only: it names what changed when a query goes STALE; identity and staleness are decided
+    by ``semantic_digest`` alone."""
     out = {"base_table": base_table_digest(model)}
+    if models_digest is not None:
+        out["models_digest"] = models_digest
     for name, d in referenced_definitions(query, model, missing).items():
         out[name] = expr_sha256(d["expr"])
     return out

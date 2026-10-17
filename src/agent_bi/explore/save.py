@@ -10,9 +10,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
-import sys
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -29,15 +26,20 @@ from agent_bi.hashing import canonical_dumps, definition_digests, semantic_diges
 from agent_bi.query.compile import compile as compile_query
 from agent_bi.query.contract import parse_query, query_hash, validate_against_model
 from agent_bi.query.verified import normalize_question
+from agent_bi.rill_models import current_models_digest
 from agent_bi.semantic.model import dump_yaml, load_model_dict
 from agent_bi.semantic.scan import paths_for
 from agent_bi.semantic.validate import validate
+from agent_bi.verify.compute_known_answer import (
+    NotReadonlyError,
+    SqlError,
+    compute_known_answer,
+)
 from agent_bi.verify.known_answers import compare
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 SAVED_QUERY_SCHEMA = "agent-bi-saved-query/1.0"
 ANSWER_SCHEMA = "agent-bi-answer/1.0"
-COMPUTE_SCRIPT = "scripts/compute_known_answer.py"
 CANVAS_ROW_HEIGHT = "400px"
 CANVAS_ROW_WIDTH = 12
 
@@ -123,31 +125,17 @@ def append_canvas_row(text: str, component: str) -> str:
 # -- the independent route (--verify) ---------------------------------------------------------
 
 
-def run_independent_sql(
-    project_dir: Path, sqlite_path: Path, sql: str, name: str, by: str
-) -> dict[str, Any]:
-    """Run the operator's SQL with ``scripts/compute_known_answer.py`` (read-only sqlite3, one
-    SELECT/WITH statement) and return the known-answer document it writes."""
-    script = project_dir / COMPUTE_SCRIPT
-    if not script.is_file():
-        raise engine_error("ENGINE_UNAVAILABLE", f"{COMPUTE_SCRIPT} not found under {project_dir}")
-    with tempfile.TemporaryDirectory() as tmp:
-        out = Path(tmp) / "ka.json"
-        proc = subprocess.run(
-            [sys.executable, str(script), "--sqlite", str(sqlite_path), "--sql", sql,
-             "--name", name, "--by", by, "--out", str(out)],
-            check=False, capture_output=True, text=True, cwd=project_dir,
-        )
-        if proc.returncode == 2:
-            raise validation_error(
-                "STATEMENT_NOT_ALLOWED", proc.stderr.strip() or "--expected-sql must be a SELECT or WITH"
-            )
-        if proc.returncode != 0:
-            raise validation_error(
-                "VERIFY_MISMATCH",
-                f"the independent route failed: {proc.stderr.strip() or proc.stdout.strip()}",
-            )
-        return json.loads(out.read_text(encoding="utf-8"))
+def run_independent_sql(sqlite_path: Path, sql: str, name: str, by: str) -> dict[str, Any]:
+    """Compute the known answer in-process with the installed independent route (D436):
+    stdlib sqlite3, read-only, exactly one SELECT/WITH statement. The module is ordinary
+    Agent BI library code that never imports ``agent_bi``, so the answer is independent of
+    the compiler; no process is spawned and no path or file is looked up."""
+    try:
+        return compute_known_answer(sqlite_path, sql, name, by)
+    except NotReadonlyError as exc:
+        raise validation_error("STATEMENT_NOT_ALLOWED", str(exc)) from exc
+    except SqlError as exc:
+        raise validation_error("VERIFY_MISMATCH", f"the independent route failed: {exc}") from exc
 
 
 # -- save ------------------------------------------------------------------------------------
@@ -175,7 +163,10 @@ def run_save(
     model_path, sidecar_path = paths_for(semantic_dir, model_name)
     model = load_model_dict(str(model_path))
     validate_against_model(q, model)
-    digest = semantic_digest(q, model)
+    models_digest = current_models_digest(
+        config.base_dir / config.rill.project_dir, model, config.engines.duckdb.rill_models
+    )
+    digest = semantic_digest(q, model, models_digest)
     if art.get("semantic_digest") != digest:
         raise validation_error(
             "QUERY_INVALID",
@@ -272,15 +263,15 @@ def run_save(
     if verify:
         _prepare_verification(
             outputs, name, question or "", by or "", expected_sql or "", force, q, q_hash, digest,
-            model, model_path, sidecar_path, config, project_dir, model_name,
+            models_digest, model, model_path, sidecar_path, config, project_dir, model_name,
         )
     return fs_txn.publish(project_dir, outputs)
 
 
 def _prepare_verification(
     outputs: dict[str, str], name: str, question: str, by: str, expected_sql: str, force: bool,
-    q: Any, q_hash: str, digest: str, model: dict[str, Any], model_path: Path, sidecar_path: Path,
-    config: Config, project_dir: Path, model_name: str,
+    q: Any, q_hash: str, digest: str, models_digest: str | None, model: dict[str, Any],
+    model_path: Path, sidecar_path: Path, config: Config, project_dir: Path, model_name: str,
 ) -> None:
     sidecar: dict[str, Any] = yaml.safe_load(sidecar_path.read_text(encoding="utf-8"))
     side_vqs: dict[str, Any] = sidecar.setdefault("verified_queries", {})
@@ -292,7 +283,7 @@ def _prepare_verification(
     base = model["tables"][0]["base_table"]
     engine = open_engine("duckdb", config)
     try:
-        alias = engine.resolve_relation(base["database"], base["schema"])[0]
+        alias = engine.data_alias(base["database"], base["schema"], base["table"])
         if engine.attach_type(alias) != "sqlite":
             raise engine_error(
                 "ENGINE_UNAVAILABLE", "save --verify's independent route reads a SQLite source in v1"
@@ -302,7 +293,7 @@ def _prepare_verification(
         columns, rows, _ = engine.execute_with_as_of(compiled.compiled_sql, alias)
     finally:
         engine.close()
-    ka = run_independent_sql(project_dir, sqlite_path, expected_sql, name, by)
+    ka = run_independent_sql(sqlite_path, expected_sql, name, by)
     diffs = compare(ka["expected"], columns, rows)
     if diffs:
         raise validation_error(
@@ -310,7 +301,7 @@ def _prepare_verification(
             "the compiled query and the independent SQL disagree; nothing was written:\n  "
             + "\n  ".join(diffs),
         )
-    digests = definition_digests(q, model)
+    digests = definition_digests(q, model, None, models_digest)
     # known-answer file (§5.6 key order)
     known = {
         "name": name, "query_hash": q_hash, "semantic_digest": digest,

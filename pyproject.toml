@@ -34,6 +34,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "agent_bi.query" = ["contract_header.md"]
+"agent_bi.explore" = ["default_theme.json"]
 
 [tool.setuptools.dynamic]
 version = {attr = "agent_bi.version.__version__"}

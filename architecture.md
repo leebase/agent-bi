@@ -7,6 +7,32 @@
 > If you find a contradiction between this document and a pinned spec, stop and record it
 > in `evidence/<sprint>/CONTRADICTION.md`; do not resolve it by guessing.
 
+**Product (D430).** Agent BI is the deterministic trust and control plane for agent-built
+analytics on Rill. **Rill owns transformation execution, the semantic/metrics runtime and
+the dashboards; Agent BI owns trust in them.**
+
+> **Adopt, don't replace (frozen, D430).** Agent BI does not replace Rill capabilities.
+> When Rill can deterministically perform an analytics operation, Agent BI adopts it and
+> adds provenance, verification, human acceptance, staleness detection, and agent-change
+> governance where required.
+
+A feature proposal that re-implements something Rill already performs deterministically
+(transformations, joins, metrics runtime, dashboards, chat surfaces, sharing, alerts,
+administration) is out of scope by this rule, however convenient.
+
+> **Rill probe before freeze (permanent development rule, D432).** Any Agent BI contract that
+> claims Rill owns a capability must have a real Rill executable probe — the pinned binary
+> building and serving the exact files the contract describes — recorded before the contract
+> freezes.
+
+> **Installed functionality only (permanent development rule, D436).** All runtime
+> functionality required by documented Agent BI commands must ship as installed Agent BI
+> functionality. Runtime commands may not depend on source-checkout-relative scripts.
+> A command never looks up code or package defaults under the project directory or the
+> current directory; the project directory holds only the operator's configuration, data
+> and Agent BI's generated/committed artifacts. Acceptance runs in a checkout-free
+> workspace with Agent BI installed from a built wheel.
+
 ---
 
 ## 0. The Nondeterminism Boundary (read first)
@@ -131,14 +157,12 @@ agent-bi/
 ├── semantic/                     # committed semantic models
 │   ├── <model>.yaml              # spec-pure Snowflake semantic view YAML
 │   └── <model>.provenance.yaml   # sidecar (§4.2)
-├── models/                       # SQL views for M2 ("views combine tables")
-│   └── <view>.sql
 ├── queries/                      # saved SemanticQuery JSON (§4.3)
 │   └── <name>.json
 ├── rill/                         # generated Rill project (checked in)
 │   ├── rill.yaml
 │   ├── connectors/               # if the pinned Rill docs require connector files
-│   ├── models/<model>.sql
+│   ├── models/<model>.sql        # generated for table models; operator-owned Rill SQL models for view models (§5.13)
 │   ├── metrics/<model>.yaml
 │   ├── dashboards/<model>_explore.yaml
 │   ├── dashboards/<model>_default_canvas.yaml   # generated (ADR-009)
@@ -148,9 +172,10 @@ agent-bi/
 ├── src/agent_bi/
 │   ├── __init__.py  version.py  main.py  errors.py
 │   ├── config.py                 # loads agent-bi.yaml
-│   ├── engines.py                # Engine protocol + DuckDBEngine + SnowflakeEngine; session settings; apply_models (§5.13)
+│   ├── engines.py                # Engine protocol + DuckDBEngine + SnowflakeEngine; session settings; Rill-model views (§5.13)
 │   ├── catalog.py                # Relation/Column discovery per engine
-│   ├── hashing.py                # sha256 helpers, canonical JSON, semantic_digest (§4.7), models_digest (§5.13)
+│   ├── hashing.py                # sha256 helpers, canonical JSON, semantic_digest (§4.7)
+│   ├── rill_models.py            # §5.13: form/denylist checks, models_digest, source file, registration
 │   ├── fs_txn.py                 # write transactions (§5.14)
 │   ├── semantic/
 │   │   ├── model.py              # pydantic: SemanticModel and children (§4.1)
@@ -409,8 +434,8 @@ part records facts about one execution.
 - `sidecar_sha256` here uses the same definition as the build manifest (sidecar bytes with the top-level `scanned_at:` line removed; one function, `provenance_manifest.sidecar_digest`), so it is an artifact field (D396).
 - `compiled_sql` never contains an as-of clause; `executed_sql` is `compiled_sql` with the
   engine's as-of clause applied (§5.3.4). Only `compiled_sql_sha256` is used for identity.
-- `models_digest`: sha256 of the concatenated canonical text of `models/*.sql` in sorted
-  filename order (§5.13); `null` when the model's relation is not a view.
+- `models_digest`: the transitive dependency digest of the bound operator Rill model graph
+  (§5.13 rule 4); `null` when the model's relation is not a view.
 - **`as_of` rule.** For a SQLite or DuckDB **file**: the engine opens the file
   **read-only** (`ATTACH ... (TYPE SQLITE, READ_ONLY)` / `duckdb.connect(path, read_only=True)`),
   hashes the file bytes **before** execution and **after** execution, and refuses with
@@ -504,6 +529,7 @@ engines:
       - {path: tests/fixtures/idle-warehouse-waste.sqlite, alias: fixture, type: sqlite}
     relation_map:                        # semantic base_table (DATABASE.SCHEMA) → duckdb catalog.schema — DuckDB only
       "FIXTURE.MAIN": "fixture.main"
+    rill_models: []                      # operator-owned Rill SQL models exposed as VIEWS.MAIN.<name> (§5.13); optional, default empty
     session:                             # fixed; the engine applies these on connect and records them in every receipt
       TimeZone: UTC
       threads: 1
@@ -545,6 +571,16 @@ the sha256 of the canonical JSON of:
   "definitions": { <name>: {"kind": metric|dimension|time_dimension|filter, "expr": <expr as written>} 
                    for every metric, dimension, time dimension and named filter q references, sorted by name } }
 ```
+
+**Rill-model-backed models (§5.13, D430).** When `base_table` is `VIEWS.MAIN.<name>`, the
+canonical JSON gains a third key, `"models_digest": <the transitive dependency digest of
+rill/models/<name>.sql per §5.13 rule 4>`, computed from the files **at the time of the check**
+(never copied from the sidecar). For every other model the key is absent, so table-model digests, goldens and
+known answers are byte-identical to before. For these models `definition_digests` carries
+`models_digest` immediately after `base_table`, and a STALE line names `models_digest` when
+the Rill model changed. `hashing.semantic_digest` and `hashing.definition_digests` take the
+current value as an explicit argument; every caller obtains it from the single function
+that computes it (§5.13 rule 4).
 
 Descriptions, synonyms, sample values and sidecar statuses are **not** in the digest:
 changing them does not change what a query computes. Changing any referenced `expr` or
@@ -639,6 +675,11 @@ see refresh rule 3). `scan` never reads or writes the LLM.
    when it is present, then `validate`, then `compile-rill`.
 
 ### 5.3 `query/compile.py`
+
+**Maintenance mode (D430).** The SemanticQuery compiler is kept as the independent oracle
+route next to Rill's Metrics SQL and as the future Snowflake compilation. It gains no
+joins, no relationship compilation and no feature that competes with Metrics SQL; changes
+are limited to defects and to what an accepted contract requires.
 
 #### 5.3.1 SQL shape (both dialects)
 
@@ -777,7 +818,7 @@ metrics views, explore dashboards and canvas components come from the pinned Ril
 | Semantic object | Rill |
 |---|---|
 | `base_table` (relation kind `table`) | `rill/models/<model>.sql`: `SELECT` every catalog column in ordinal order, one per line, each as `"<col>"` except a time dimension whose `expr` is `CAST("<col>" AS DATE)`, emitted as `CAST("<col>" AS DATE) AS "<col>"`; `FROM sqlite_scan('<fixture path relative to the rill/ directory>', '<table>')` for SQLite sources (Sprint 0 Q1 = YES). Exact layout: `tests/golden/rill/idle_warehouse_waste/models/idle_warehouse_waste.sql`. |
-| `base_table` (relation kind `view`, §5.13) | `rill/models/<model>.sql`: the view's SELECT body extracted from `models/<view>.sql`, with every relation reference rewritten through `relation_map` to the Sprint 0 Q1 source form. Rill materializes the view as its own model; agent-bi's in-process DuckDB view is never visible to Rill and is never expected to be. |
+| `base_table` (relation kind `view`, §5.13) | **No model file is generated.** The operator's `rill/models/<name>.sql` *is* the Rill model; the metrics view uses `model: <name>`. agent-bi never writes, rewrites or translates that file. |
 | time dimension (first one) | metrics view `timeseries` |
 | week convention | metrics view `first_day_of_week: 1` (Monday; matches DuckDB and the Snowflake session) |
 | dimensions | metrics view `dimensions[]` (`name`, `column` — the model already applied any cast) |
@@ -814,7 +855,7 @@ table, `width: 12`, `height: 400px`. Rows that would be empty are omitted. Exact
 
 - `emit_semantic_view_yaml(model) -> str`: the semantic YAML itself (it is already spec-pure); this function only validates and returns the file text **unchanged** so there is exactly one writer. No identity rewriting happens here or anywhere: ADR-011 makes the file valid on Snowflake as committed.
 - `load(engine, yaml_text)`: executes `CALL SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML('<semantic_view_schema>', $$<yaml>$$)` — exact procedure signature from the pinned Snowflake doc; the target schema is `engines.snowflake.semantic_view_schema` (§4.6). Returns the created view name. Precondition checked first: the `base_table` relation exists at its YAML identity (`SELECT 1 FROM "<DATABASE>"."<SCHEMA>"."<table>" LIMIT 1`); absent → `E_BASE_TABLE_MISSING` naming the identity and the loader script that creates it.
-- `scripts/load_fixture_to_snowflake.py` creates the fixture relations at **exactly the YAML identity**: `CREATE DATABASE IF NOT EXISTS "<DATABASE>"`, `CREATE SCHEMA IF NOT EXISTS "<DATABASE>"."<SCHEMA>"`, then the tables. For a view model (§5.13) it creates the view from `models/<view>.sql` with relation references rewritten to their YAML identities (the DuckDB `relation_map` inverted — a pure text substitution over the quoted three-part names the §5.13 form requires).
+- `scripts/load_fixture_to_snowflake.py` creates the fixture relations at **exactly the YAML identity**: `CREATE DATABASE IF NOT EXISTS "<DATABASE>"`, `CREATE SCHEMA IF NOT EXISTS "<DATABASE>"."<SCHEMA>"`, then the tables. How a Rill-model-backed relation (§5.13) reaches Snowflake is an M3 design question (D430): its `sqlite_scan` sources have no Snowflake meaning, and the earlier plan to rewrite a private `models/` view into Snowflake identities is withdrawn.
 - `query_semantic_view_sql(semantic_query) -> str`: the `SELECT * FROM SEMANTIC_VIEW(<name> DIMENSIONS ... METRICS ...)` form from `docs/pinned/snowflake-semantic-view-query.md`, with every dimension and metric qualified by its logical table name (`<tables[0].name>.<name>`, as the pinned examples do); filters go in the inner `WHERE` the pinned page shows (no aggregates there). Named filters are always `UNSUPPORTED_BY_ROUTE` on route 3: the pinned spec says the semantic SQL compiler ignores standalone `filters` and uses entity-level `labels` instead. (pinned in Sprint 0 task 4 from Snowflake's "Querying a semantic view" page). It supports the **semantic-view-queryable subset** of SemanticQuery: metrics, dimensions, equality/IN filters on dimensions, time grain via a dimension expression only if the pinned page shows one; `time.start/end`, `between`, `like`, and named filters are compiled as an outer `WHERE` over the `SEMANTIC_VIEW(...)` result only where the pinned page shows an outer WHERE is permitted, otherwise the query is reported `UNSUPPORTED_BY_ROUTE` (parity skips it for route 3 **and says so per query**; it is not silently dropped). This route is **mandatory for M3**: if the pinned page lacks the `SEMANTIC_VIEW(` syntax with both `DIMENSIONS` and `METRICS` clauses, Sprint 7 is `BLOCKED` with a `CONTRADICTION.md`, not quietly narrowed.
 
 ### 5.6 `verify/known_answers.py`
@@ -826,9 +867,18 @@ For each `verified_queries[]` entry `q` in the model there is a file
 {"name": "...", "query_hash": "sha256:...", "semantic_digest": "sha256:...", "definition_digests": {"base_table": "sha256:...", "<name>": "sha256:..."}, "semantic_query": {...}, "expected": {"columns": ["warehouse_name","total_credits_used"], "rows": [["ANALYTICS_WH", 123.45], ...]}, "expected_computed_by": "direct-sql", "expected_sql": "SELECT ...", "expected_sql_by": "<person>", "expected_at": "<ISO>", "fixture_sha256": "sha256:..."}
 ```
 
-`expected` is produced **once** by `scripts/compute_known_answer.py` using the stdlib
-`sqlite3` module and **human-written** SQL (an independent route from the compiler),
-reviewed, and committed. The script opens the fixture **read-only**
+`expected` is produced **once** by the independent-route program
+`agent_bi/verify/compute_known_answer.py` (installed with the package; D436) using the
+stdlib `sqlite3` module and **human-written** SQL (an independent route from the compiler),
+reviewed, and committed. The program imports **only the Python standard library** (never
+`agent_bi`) and is **ordinary installed library code**: `save --verify` calls its function
+**in-process** through a module/API Agent BI owns. It is never located as a file and
+executed, and it is never run as a subprocess (owner amendment, D436). **Trust boundary:**
+the project/workspace is the data being evaluated and the installed Agent BI package is the
+trusted verifier, so known-answer computation and trust establishment never delegate
+executable logic to project- or cwd-controlled code. `scripts/compute_known_answer.py` in the
+source checkout is a thin shim over the module's CLI wrapper (same command line and output),
+kept for checkout scripts; no runtime command uses it. The program opens the fixture **read-only**
 (`sqlite3.connect("file:<path>?mode=ro", uri=True)`), executes exactly one statement,
 and refuses (`E_NOT_READONLY`) any SQL whose first keyword is not `SELECT` or `WITH`;
 it records `fixture_sha256` and `expected_sql_by`. `expected_sql` never comes from a
@@ -921,7 +971,7 @@ Mark selection by result shape (no other rules):
 | anything else | no chart; `chart: null` and a note "table only" |
 
 `--mark <line|bar|area|point|table>` overrides when compatible; incompatible → `E_CHART_INCOMPATIBLE`.
-Theme: `--theme <name>` loads `themes/<name>.json` (a Vega config object) and sets it as `config`; default `themes/default.json`, whose exact content is `{}` (an empty Vega config — Rill and Vega defaults apply; pre-Sprint-4, D398). Number formatting: `.2f` for a metric whose name starts with `avg_` or whose `expr` contains `/` (a ratio), `,.0f` otherwise, set via `axis.format`.
+Theme: `--theme <name>` loads `themes/<name>.json` (a Vega config object) and sets it as `config`; default `themes/default.json` in the project directory when that file exists, otherwise the installed package default (the package resource `agent_bi.explore/default_theme.json`, read with `importlib.resources`, never a computed filesystem path; D436), whose exact content is `{}` (an empty Vega config — Rill and Vega defaults apply; pre-Sprint-4, D398). Number formatting: `.2f` for a metric whose name starts with `avg_` or whose `expr` contains `/` (a ratio), `,.0f` otherwise, set via `axis.format`.
 
 ### 5.10 `explore/save.py` — promotion
 
@@ -935,7 +985,7 @@ publication leaves the repository byte-identical.
 1. `queries/<name>.json`: `{"schema_version": "agent-bi-saved-query/1.0", "name", "status": "saved" | "proposed" | "verified", "question", "question_normalized", "query_hash", "semantic_digest", "semantic_query" (canonical, pretty-printed, sorted keys)}`. A `proposed` file of the same name (from `propose_query`, §4.5) is upgraded in place; any other existing name is refused without `--force` (ADR-009).
 2. `rill/components/<name>.yaml`: the `custom_chart` component of §5.4 (`metrics_sql` = the `rill`-dialect compilation of the SemanticQuery; `vega_spec` = the envelope's chart with `"data": {"name": "query1"}`), whose first three lines are the annotations `# agent_bi_query_hash: sha256:...`, `# agent_bi_semantic_digest: sha256:...`, `# agent_bi_sql_sha256: sha256:...` (sha256 of the exact `metrics_sql` string written). Comments, because Sprint 0 Q6 = NO (Rill rejects unknown top-level keys). A query refused by the `rill` dialect (§5.3.4) refuses the whole `save` with `E_UNSUPPORTED_BY_RILL_ROUTE`.
 3. `--add-to-canvas <canvas-name>` appends the component to `rill/dashboards/<canvas-name>.yaml` (an **operator-owned** canvas, ADR-009; refused with `E_GENERATED_FILE` if the target is a generated `_default_canvas`). Refused with `E_CANVAS_NOT_VERIFIED_SCOPE` if the target canvas's `defaults.time_range` is not `inf` or it declares default filters (ADR-008 as amended; `canvas fork` copies the generated `defaults: {time_range: inf}`, so forked canvases qualify). Placement rule, no exceptions (pinned canvas uses `rows[].items[]`, no coordinates): append a new last row `{items: [{component: <name>, width: 12}], height: 400px}`. Without the flag, the operator places the component in Rill's canvas editor.
-4. `--verify --by <who> --expected-sql "<SQL>"`: the operator supplies the independent SQL by hand. **Before any file is published**, `scripts/compute_known_answer.py` runs it read-only (§5.6) and the compiled query is executed; the two must agree under the §5.6 comparison or `save` refuses with `E_VERIFY_MISMATCH` and writes nothing. On agreement the transaction additionally publishes: the known-answer file (`query_hash`, `semantic_digest`, `expected_sql_by = --by`); a `verified_queries[]` entry in the YAML (`question`, `sql` = compiled **Snowflake**-dialect SQL without as-of per §4.1, `verified_at` = now, `verified_by` = `--by`); the sidecar `verified_queries[<name>]` record (§4.2); and `status: verified` in step 1's file. Without `--expected-sql`, `--verify` is refused with `E_NO_INDEPENDENT_SQL`. A verified query is never created from a single route, and never from SQL that arrived in a patch.
+4. `--verify --by <who> --expected-sql "<SQL>"`: the operator supplies the independent SQL by hand. **Before any file is published**, the installed independent-route program (§5.6, D436) runs it read-only and the compiled query is executed; the two must agree under the §5.6 comparison or `save` refuses with `E_VERIFY_MISMATCH` and writes nothing. On agreement the transaction additionally publishes: the known-answer file (`query_hash`, `semantic_digest`, `expected_sql_by = --by`); a `verified_queries[]` entry in the YAML (`question`, `sql` = compiled **Snowflake**-dialect SQL without as-of per §4.1, `verified_at` = now, `verified_by` = `--by`); the sidecar `verified_queries[<name>]` record (§4.2); and `status: verified` in step 1's file. Without `--expected-sql`, `--verify` is refused with `E_NO_INDEPENDENT_SQL`. A verified query is never created from a single route, and never from SQL that arrived in a patch.
 
 ### 5.11 The LLM steps live in the harness (`skills/ask/SKILL.md`)
 
@@ -1002,35 +1052,108 @@ semantic objects a refresh would add, update or remove and which accepted object
 verified queries would be broken. Output is a Markdown table on stdout; exit 1 if any
 structural change. `diff` writes nothing.
 
-### 5.13 Views (`models/*.sql`) — operator-authored relations
+### 5.13 Rill models — the operator's model graph (M2, D430, D432)
 
-A view is operator-authored SQL and is treated as **part of the data**, not as a query:
-it is hashed into provenance and constrained for determinism, never compiled from IR.
+**Rill owns the model graph. Agent BI observes that graph, binds trust to it, and invalidates
+evidence when the graph changes** (D432). A relation that combines tables is built the way Rill
+itself supports it: one ordinary single-table **source model** per SQLite table
+(`SELECT … FROM sqlite_scan('<path>', '<table>')`) and an ordinary **join model** that references
+those models by name. All of them are operator-owned files under
+`<rill.project_dir>/models/` (ADR-009). agent-bi never generates, rewrites or translates them,
+never compiles a join, and keeps no alternative representation of them: they are treated as
+**part of the data** — constrained, hashed into provenance and executed verbatim. (Rill v0.90.5
+cannot build a model containing two relative `sqlite_scan` calls — pinned by the pre-freeze probe,
+D432 — so neither can agent-bi; that form is refused, never worked around.)
 
-1. **Form.** `models/<view>.sql` contains exactly one statement of the form
-   `CREATE OR REPLACE VIEW <view> AS <select>` (case-insensitive prefix, matched by
-   `VIEW_RE`). Every relation reference inside `<select>` is a quoted three-part DuckDB
-   name resolvable through `relation_map` (e.g. `"fixture"."main"."warehouse_metering_history"`).
-   Anything else → `E_UNSUPPORTED_VIEW_FORM` naming the file.
-2. **Determinism.** `<select>` may not contain, as a whole word (regex `VIEW_DENY_RE`,
+1. **Registration.** `agent-bi.yaml` lists models under `engines.duckdb.rill_models` (§4.6).
+   `init --rill-model <name> [--model <model>]` registers `<name>` **and every model in its
+   dependency closure** (rule 4, discovered over the operator-owned files present in
+   `<rill.project_dir>/models/`), the `relation_map` entry `"VIEWS.MAIN": "memory.main"`, and the
+   attach entry for the graph's SQLite file (rule 5), in the same transaction as the scan. The
+   semantic model's `base_table` is `{database: VIEWS, schema: MAIN, table: <name>}`; the model
+   name defaults to `<name>`. Only the model `init` names is scanned; its dependencies are
+   registered but get no semantic model unless initialized themselves.
+2. **Supported form (closed, per file).** Anything outside it → `E_UNSUPPORTED_VIEW_FORM` naming
+   the file and the failed rule; nothing is written. The file exists; its name matches the
+   model-name rule; it does not begin with the agent-bi generated header (a generated table model
+   is not an operator model); it contains no Rill annotation line (regex `^\s*--\s*@`, multiline)
+   and no templating (`{{` or `{%`); DuckDB parses it as exactly one statement of type SELECT
+   (`WITH … SELECT` qualifies); it contains **at most one** `sqlite_scan` call, whose two
+   arguments are single-quoted literals; it contains, as a whole word (case-insensitive), none of
+   the external readers `read_csv`, `read_csv_auto`, `read_parquet`, `parquet_scan`, `read_json`,
+   `read_json_auto`, `read_ndjson`, `read_text`, `read_blob`, `glob`, `postgres_scan`,
+   `mysql_scan`, `sqlite_attach`, `iceberg_scan`, `delta_scan`, `read_xlsx`. Every other relation
+   it reads is a registered model referenced by bare name; a reference that does not resolve
+   fails when the view is created (rule 5). **Per closure:** at least one model in the closure
+   has a `sqlite_scan`; every `sqlite_scan` in the closure names the **same** SQLite file (v1
+   reads one file), resolved against the Rill project directory exactly as Rill resolves it, and
+   that file exists; the dependency graph has no cycle (a cycle → `E_UNSUPPORTED_VIEW_FORM`
+   naming the cycle).
+3. **Determinism.** No file in the closure may contain, as a whole word (regex `VIEW_DENY_RE`,
    case-insensitive): `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP`, `NOW`, `TODAY`,
    `RANDOM`, `RAND`, `UUID`, `GEN_RANDOM_UUID`, `GETDATE`, `SYSDATE`, `LOCALTIME`,
-   `LOCALTIMESTAMP`, `SAMPLE`, `USING SAMPLE`. Violation → `E_NONDETERMINISTIC_VIEW`.
-   This is a denylist, so it is checked on every engine start (`apply_models`) and in
-   `validate`; the list grows only with a test.
-3. **Digest.** `models_digest` (§4.4) = sha256 over the concatenation of each file's text
-   (LF-normalized, trailing whitespace stripped) in sorted filename order. It is part of
-   every provenance record and manifest for a view model and part of what the fresh-clone
-   check compares.
-4. **Where the view lives per engine.** agent-bi's DuckDB: `apply_models(dir)` executes
-   every `models/*.sql` after attach, in sorted filename order, into the in-process
-   catalog (`relation_map` entry `"VIEWS.MAIN": "memory.main"`). Rill: `targets/rill.py`
-   emits the `<select>` body as `rill/models/<view>.sql` with relation references rewritten
-   to the Q1 source form (§5.4) — Rill never sees agent-bi's connection. Snowflake: the
-   loader creates the view at `VIEWS.MAIN.<view>` from the same `<select>` with references
-   rewritten to YAML identities (§5.5). Three materializations, one source text, one digest.
-5. **Scan.** `scan --relation VIEWS.MAIN.<view>` discovers the view through the DuckDB
-   catalog like a table; the sidecar records `relation.kind: view` and `models_digest`.
+   `LOCALTIMESTAMP`, `SAMPLE`, `USING SAMPLE`. Violation → `E_NONDETERMINISTIC_VIEW` naming the
+   file. Rules 2 and 3 are checked at every engine start for every registered model and by
+   `validate`, with the failure isolation of rule 5; both lists grow only with a test.
+4. **Dependencies and digest (frozen asymmetry, D432).** `deps(M)` = every **registered** model
+   name `N ≠ M` that appears as a whole word (case-insensitive, comments included) in `M`'s file
+   text; at `init` time the candidate names are the operator-owned files in
+   `<rill.project_dir>/models/`. `closure(M)` = `M` plus the transitive closure of `deps`. This is
+   **not** a SQL lineage parser, and its error direction is deliberate: a false-positive
+   dependency (a name that merely appears in a comment or literal) only causes an unnecessary
+   STALE; a missed dependency would make an answer falsely `governed`, and cannot happen because
+   a model can only read another registered model by spelling its name. `models_digest(M)` =
+   sha256 of the canonical JSON `{<name>: <file digest>}` over `closure(M)`, where a file digest
+   is sha256 of the file text after CRLF/CR → LF and stripping trailing whitespace from every line
+   (every other edit, comments included, changes it — fail closed). It is computed by exactly one
+   function (`rill_models.models_digest`) from the files on disk; it is recorded in the sidecar
+   (`relation.models_digest`), every provenance record and the build manifest; and it is part of
+   `semantic_digest` (§4.7). Changing the join model, or any model upstream of it at any depth,
+   makes every verification of the model STALE until the operator re-runs the independent
+   route; changing an unrelated registered model does not.
+5. **Execution — one graph, two engines.** At start, after attach, agent-bi's DuckDB engine
+   checks every registered model and executes `CREATE VIEW memory.main."<name>" AS <file text>`
+   verbatim, in dependency order (a topological order; ties by name), so bare-name references
+   resolve to the dependency views. DuckDB resolves `sqlite_scan` paths against the process
+   working directory, so while any Rill model is registered the engine sets the working
+   directory to the absolute Rill project directory for those statements and for every
+   statement it executes, restoring it afterwards (a context manager inside `engines.py`;
+   nothing outside the engine changes directory). The graph's SQLite file is also attached
+   read-only under the attach-alias rule (§5.2 rule 4, D394: reuse an existing entry for the same
+   absolute file, otherwise append `{path: <file relative to the config directory>, alias:
+   <name>, type: sqlite}` and its `relation_map` entry); `as_of` for a view model is that file's
+   digest, with the same before/after `E_SNAPSHOT_CHANGED` rule, and the independent route
+   (§5.6, `save --verify`) reads that same file with stdlib sqlite3 — so a known answer for a view
+   model is a human-written join over the raw tables, never a query against a Rill model. Rill
+   executes the same files for its dashboards; `verify --engine rill` passing the known answers
+   is the evidence that Rill's execution and agent-bi's agree.
+   **Failure isolation (D431, reviewed under D432).** Each registered model is checked and
+   created independently. A model that fails rule 2, rule 3 or view creation — itself, or because
+   a model in its closure failed — is recorded as unavailable with its error (naming the failing
+   file); it does not prevent the engine from opening or from serving any relation outside the
+   broken closure. Every command whose relation is such a model (`scan`, `scan --refresh`,
+   `diff`, `ask`, `save`, `verify`, `compile-rill`, `validate`, `init`) raises the recorded
+   `E_UNSUPPORTED_VIEW_FORM` or `E_NONDETERMINISTIC_VIEW` and writes nothing. Table models behave
+   exactly as before, including `diff` reporting their own structural drift (exit 1).
+   **Build-validity invariant (D432).** Every model in the closure of a semantic model's
+   relation must be build-valid for that semantic model to validate, verify or answer; a broken
+   registered model **outside** that closure never blocks it. `validate --model <view model>`
+   therefore opens the DuckDB engine and fails with the recorded error when any model in the
+   closure is unavailable — `validate` never reports OK for a view model whose graph does not
+   build.
+6. **Scan.** `scan --relation VIEWS.MAIN.<name>` discovers the view through the DuckDB catalog
+   like a table; the sidecar records `relation.kind: view`, `relation.source:
+   rill/models/<name>.sql`, `relation.dependencies` (the sorted `rill/models/<n>.sql` paths of
+   `closure(<name>)` minus the model itself) and `relation.models_digest`. `scan --refresh`
+   recomputes them. Classification, naming and metric generation are unchanged (§4.1.1).
+7. **compile-rill.** For a view model it writes the metrics view (`model: <name>`), the explore,
+   the default canvas and the manifest, and never writes any `rill/models/*.sql` (ADR-009). For a
+   table model it refuses with `E_OPERATOR_FILE` to overwrite an existing `rill/models/<model>.sql`
+   that does not begin with the generated header.
+8. **Not supported in v1 (documented scope, D372).** A model with more than one `sqlite_scan`
+   (Rill cannot build it), Rill annotations and templating, YAML, incremental or partitioned
+   models, more than one source file per graph, non-SQLite sources, references to generated
+   table models, and Snowflake materialization (M3). Each is a refusal, never an approximation.
 
 ### 5.14 Write transactions
 
@@ -1377,7 +1500,9 @@ feature is cut or the chart is a Vega-Lite component.
 ### ADR-004: v1 compiles over exactly one relation; views combine tables
 **Status:** Accepted (Lee: "version 1 uses views to combine tables and we can define
 table relationships later"). **Consequence:** `relationships[]` is refused; join
-compilation does not exist; M2 scans a view.
+compilation does not exist; M2 scans a view. **Amended (D430):** the view is an
+operator-authored Rill SQL model (§5.13) — Rill performs the join; agent-bi will not
+build join compilation or relationships at all (adopt, don't replace).
 
 ### ADR-005: Numbers are verified by independent routes, never by inspection
 **Status:** Accepted. Known answers come from hand-written direct SQL; parity comes from
@@ -1392,8 +1517,8 @@ a second engine. A reviewer reading SQL is not evidence that a number is right.
 separately so none is claimed by the others:
 
 **(a) Deterministic compilation — byte identity of artifacts.** Given identical inputs
-(model file bytes, sidecar bytes, canonical query JSON, `agent-bi.yaml`, `models/*.sql`
-text, pinned Rill version), these outputs are byte-identical with **no masking**:
+(model file bytes, sidecar bytes, canonical query JSON, `agent-bi.yaml`, registered
+`rill/models/<name>.sql` text (§5.13), pinned Rill version), these outputs are byte-identical with **no masking**:
 `semantic/<model>.yaml`; every sidecar field except `scanned_at`; `compiled_sql` for every
 dialect; `queries/*.json`; `rill/components/*.yaml`; every generated Rill file; the
 `artifact` part of every provenance record; the build manifest except `build_id`;
@@ -1459,6 +1584,9 @@ refuses to overwrite an existing name without `--force`, and the builder (Rill's
 editor) edits operator-owned canvases, which the operator creates by copying the default
 canvas (`agent-bi canvas fork --model <m> --name <canvas-name>` copies
 `<model>_default_canvas.yaml` to `<canvas-name>.yaml` and strips the generated header).
+**Rill models (D430, §5.13):** for a view model, `rill/models/<name>.sql` is operator-owned
+and `compile-rill` never writes it; `compile-rill` refuses with `E_OPERATOR_FILE` to overwrite
+any `rill/models/<model>.sql` lacking the generated header.
 **Consequence:** regeneration is always safe; `test_rill_target.py::test_operator_files_untouched`
 modifies an operator canvas, re-runs `compile-rill`, and asserts the bytes are unchanged.
 
@@ -1498,7 +1626,7 @@ own and the loader step does not apply.
 - All domain errors are subclasses of `AgentBiError(code: str, message: str, exit_code: int)` in `errors.py`.
 - `main.py` catches `AgentBiError`, prints `E_<CODE>: <message>` to stderr, exits with `exit_code`. Any other exception propagates with a traceback (exit 1) — no blanket `except Exception`.
 - Engine errors are wrapped as `E_ENGINE` (exit 3) with the engine's message appended verbatim.
-- `Engine.execute()` accepts only `SELECT`/`WITH` statements; anything else → `E_STATEMENT_NOT_ALLOWED` (exit 2). Attach, session settings and `apply_models` are internal engine methods.
+- `Engine.execute()` accepts only `SELECT`/`WITH` statements; anything else → `E_STATEMENT_NOT_ALLOWED` (exit 2). Attach, session settings and Rill-model view creation (§5.13 rule 5) are internal engine methods.
 - Validation messages always include the offending path/name and, for `E_UNKNOWN_FIELD`, the sorted list of valid names.
 - **Error catalogue (ratified D391).** `errors.py` holds the single authoritative catalogue
   `CATALOGUE: dict[str, tuple[int, str]]` — code → (exit code, one-line meaning). Every
@@ -1519,7 +1647,7 @@ installation and startup, not agent-bi.
 - Secrets only via environment variables referenced from `agent-bi.yaml`; never written to any file under the repo; `.gitignore` covers `out/`, `*.duckdb`, `.env`.
 - All generated SQL uses quoted identifiers from the catalog and literal functions (§5.3.3); user text never reaches SQL unquoted. `test_compile.py::test_injection_quoting` is mandatory.
 - Enrichment patches and SemanticQuery JSON are untrusted input: schema-validated, size-capped (1 MB), and never executed. No op in a patch and no field in a query carries SQL; the only expression a patch may carry (`add_metric.expr`) must parse under the closed grammar of §5.3.2 before anything is written.
-- Operator-authored SQL (`--expected-sql`, `models/*.sql`, `filters[].expr`) is executed read-only (SQLite `mode=ro`, DuckDB `read_only=True`, Snowflake role as configured), single-statement, and — for filters and views — only after passing the closed grammar or denylist (§5.3.5, §5.13).
+- Operator-authored SQL (`--expected-sql`, registered Rill models (§5.13), `filters[].expr`) is executed read-only (SQLite `mode=ro`, DuckDB `read_only=True`, Snowflake role as configured), single-statement, and — for filters and views — only after passing the closed grammar or denylist (§5.3.5, §5.13).
 - Every multi-file write is a transaction (§5.14); a half-written promotion cannot exist unless the file system itself failed mid-publish, and `validate` detects that state.
 
 ---

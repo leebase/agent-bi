@@ -1,0 +1,28 @@
+{
+  "schema_version": "agent-bi-saved-query/1.0",
+  "name": "credits_by_size_by_month",
+  "status": "verified",
+  "question": "credits by warehouse size by month",
+  "question_normalized": "credits by warehouse size by month",
+  "query_hash": "sha256:9a2f2e7ef5eab89b8f9416e4662b27733961234e6b7c1951a5d7fbdc4270cb5a",
+  "semantic_digest": "sha256:9f55ab33ee689c96af67954eec6a0114ba8771706d9326937a193b5d731ff7f5",
+  "semantic_query": {
+    "dimensions": [
+      "warehouse_size"
+    ],
+    "filters": [],
+    "limit": 1000,
+    "metrics": [
+      "total_credits_used"
+    ],
+    "model": "warehouse_metering_enriched",
+    "named_filters": [],
+    "order_by": [],
+    "schema_version": "semantic-query/1.0",
+    "table": "warehouse_metering_enriched",
+    "time": {
+      "dimension": "usage_day",
+      "grain": "month"
+    }
+  }
+}

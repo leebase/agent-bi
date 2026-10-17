@@ -16,7 +16,8 @@ from agent_bi.semantic.model import load_model_dict
 from agent_bi.targets import rill as rill_target
 from agent_bi.targets.rill import HEADER_TEXT, RILL_SCHEMA_PIN, strip_header
 from tests.conftest import ROOT
-from tests.s3_helpers import GOLDEN, MODEL, make_project, manifests
+from tests.s3_helpers import GOLDEN, MODEL, manifests
+from tests.s6_helpers import make_project
 
 BUILD_ID_RE = re.compile(r"\d{8}T\d{6}Z")
 

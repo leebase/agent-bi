@@ -1,0 +1,78 @@
+# agent-bi: generated from semantic/warehouse_metering_enriched.yaml — do not edit; edit the semantic model and re-run compile-rill
+type: canvas
+display_name: warehouse_metering_enriched
+defaults:
+  time_range: inf
+rows:
+  - items:
+      - kpi_grid:
+          metrics_view: warehouse_metering_enriched
+          measures:
+            - row_count
+        width: 3
+      - kpi_grid:
+          metrics_view: warehouse_metering_enriched
+          measures:
+            - total_credits_used_compute
+        width: 3
+      - kpi_grid:
+          metrics_view: warehouse_metering_enriched
+          measures:
+            - avg_credits_used_compute
+        width: 3
+      - kpi_grid:
+          metrics_view: warehouse_metering_enriched
+          measures:
+            - total_credits_used_cloud_services
+        width: 3
+    height: 128px
+  - items:
+      - line_chart:
+          metrics_view: warehouse_metering_enriched
+          x:
+            field: usage_day
+            type: temporal
+          y:
+            field: row_count
+            type: quantitative
+        width: 12
+    height: 320px
+  - items:
+      - bar_chart:
+          metrics_view: warehouse_metering_enriched
+          x:
+            field: warehouse_name
+            type: nominal
+          y:
+            field: row_count
+            type: quantitative
+        width: 6
+      - bar_chart:
+          metrics_view: warehouse_metering_enriched
+          x:
+            field: warehouse_size
+            type: nominal
+          y:
+            field: row_count
+            type: quantitative
+        width: 6
+    height: 320px
+  - items:
+      - table:
+          metrics_view: warehouse_metering_enriched
+          columns:
+            - warehouse_name
+            - warehouse_size
+            - cost_center
+            - row_count
+            - total_credits_used_compute
+            - avg_credits_used_compute
+            - total_credits_used_cloud_services
+            - avg_credits_used_cloud_services
+            - total_credits_used
+            - avg_credits_used
+            - distinct_warehouse_name
+            - distinct_warehouse_size
+            - distinct_cost_center
+        width: 12
+    height: 400px

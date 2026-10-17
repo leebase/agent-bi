@@ -20,7 +20,8 @@ from agent_bi.query.contract import parse_query
 from agent_bi.semantic.validate import validate
 from agent_bi.verify import rill_route
 from tests.conftest import ROOT
-from tests.s3_helpers import MODEL, make_project, manifests
+from tests.s3_helpers import MODEL, manifests
+from tests.s6_helpers import make_project
 from tests.test_carryover import make_db, scan_tmp
 from tests.test_verify_rill import (
     as_csv,

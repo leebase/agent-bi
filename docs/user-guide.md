@@ -25,10 +25,9 @@ rill:
 
 `init` requires an existing configuration file.
 
-For answers and saved charts in a standalone workspace, also copy
-[themes/default.json](../themes/default.json) from the checkout into
-`themes/default.json` in your workspace. The chart builder reads its default theme
-from the project directory; the included checkout already has this file.
+The chart builder uses the default theme shipped with Agent BI. A
+`themes/default.json` in your workspace overrides it; `--theme <name>` loads
+`themes/<name>.json` from the workspace instead.
 
 From this new directory, run:
 
@@ -40,8 +39,8 @@ rill start rill --no-open
 
 Replace the source path and table with yours. The model name must match
 `^[a-z][a-z0-9_]*$`. Use a stable source snapshot; Agent BI reads the data and records
-its digest. A model represents one relation. Joins and view-based workflows are not
-part of the accepted release.
+its digest. A model represents one relation; to combine tables, use an operator-authored
+Rill SQL model (see [Combine tables with a Rill model](#combine-tables-with-a-rill-model)).
 
 `init` adds the SQLite attachment, scans the catalog, validates the semantic model
 and generates Rill files. It preserves existing semantic content when refreshing
@@ -64,6 +63,7 @@ your chosen table is valid. Use a table-only SQLite extract for M1; see
 | `agent-bi.yaml` | Attachments, relation mapping, Rill location and engine settings. |
 | `semantic/<model>.yaml` | Semantic definitions in Snowflake semantic-view YAML form. |
 | `semantic/<model>.provenance.yaml` | Origin, definition status and verification metadata. |
+| `rill/models/<model>.sql` | Generated for a table model; **operator-owned** for a view model (never written by Agent BI). |
 | `rill/` | Generated dashboard project and build provenance. |
 | `out/<hash>.answer.json` | Query, rows, trust, SQL and execution receipt. |
 | `out/<hash>.vl.json` | Vega-Lite chart specification for the answer. |
@@ -72,6 +72,93 @@ your chosen table is valid. Use a table-only SQLite extract for M1; see
 The committed warehouse example includes known answers. Other data needs its own
 independent verification. Keep your configuration, data paths, outputs and model
 values private when appropriate; a generated answer contains actual result rows.
+
+## Combine tables with a Rill model
+
+Agent BI compiles one relation; combining tables is Rill's job. An operator-authored
+**model graph** is a set of ordinary Rill SQL files under `<rill.project_dir>/models/`:
+one single-table **source model** per table, each with its own `sqlite_scan(...)`, and an
+ordinary **join model** that reads the source models by bare name. Rill executes the
+graph; Agent BI treats every file as data — constrained, hashed and executed verbatim,
+never generated, rewritten, translated or parsed as a join specification.
+
+```sql
+-- rill/models/warehouse_metering_source.sql
+SELECT * FROM sqlite_scan('../tests/fixtures/idle-warehouse-waste.sqlite', 'warehouse_metering_history')
+```
+
+```sql
+-- rill/models/warehouse_metering_enriched.sql
+SELECT m."usage_day", m."warehouse_name", w."size" AS "warehouse_size",
+       w."cost_center", m."credits_used"
+FROM warehouse_metering_source AS m
+LEFT JOIN warehouses_source AS w ON w."name" = m."warehouse_name"
+```
+
+The supported form is closed. **Per file:** one statement, a `SELECT` (a `WITH … SELECT`
+qualifies); at most one `sqlite_scan('<path>', '<table>')` call, with single-quoted
+literals; no Rill annotation lines (`-- @…`), no templating (`{{`/`{%`), no external
+readers (`read_csv`, `read_parquet`, `postgres_scan`, `glob`, …), and none of the
+nondeterministic constructs (`CURRENT_DATE`, `NOW`, `RANDOM`, `SAMPLE`, …). Every other
+relation a model reads must be a registered model referenced by bare name. **Per
+closure:** at least one model has a `sqlite_scan`; every `sqlite_scan` in the closure
+names the same SQLite file (resolved against the Rill project directory; the file must
+exist); and the dependency graph has no cycle (a cycle is refused and named).
+
+Register the top model (the semantic model name defaults to the Rill model name):
+
+```bash
+agent-bi init --rill-model warehouse_metering_enriched
+agent-bi verify --model warehouse_metering_enriched
+```
+
+`init` registers the named model **plus its transitive dependency closure** in
+`agent-bi.yaml` (`rill_models`), adds the `"VIEWS.MAIN": "memory.main"` mapping, applies
+the attach-alias rule to the graph's single SQLite file and scans
+`VIEWS.MAIN.warehouse_metering_enriched` into `semantic/<model>.yaml`. Only the model
+`init` names is scanned; its upstream models are registered but get no semantic model
+unless you initialize them yourself. `scan --refresh` recomputes the sidecar's
+`relation.source` (`rill/models/<name>.sql`), `relation.dependencies` (the sorted
+`rill/models/<n>.sql` paths of the closure minus the model) and `relation.models_digest`
+(the closure digest). `compile-rill` writes the metrics view with `model: <name>`, the
+explore, the default canvas and the manifest, and no `rill/models` file. For a table
+model, `compile-rill` refuses with `E_OPERATOR_FILE` to overwrite an existing
+`rill/models/<model>.sql` that lacks the generated header.
+
+**Dependency staleness.** `models_digest` is the sha256 of the canonical
+`{name: file digest}` map over the closure, where a file digest is the file text with
+CRLF/CR → LF and trailing whitespace stripped (every other edit, comments included,
+changes it — fail closed). Changing the join model **or any model upstream of it at any
+depth** makes every verification of the top model `STALE` and names `models_digest`; a
+whitespace-only change does not, and changing an unrelated registered model does not.
+Clear it by re-running the independent route
+(`save --verify --force --expected-sql "<human SQL>"`). The independent SQL for a view
+model is human-written SQL over the raw tables, never a query against the Rill model.
+
+**How dependencies are found (frozen asymmetry).** Dependency discovery is not a SQL
+lineage parser: `deps(M)` is every candidate model name that appears in `M`'s file text
+as a whole word, case-insensitive, **comments and string literals included** (the
+candidates are the operator-owned files at `init` and the registered names at engine
+start). The error direction is deliberate: a name that merely appears in a comment or
+literal causes an unnecessary `STALE`; a missed dependency cannot happen because a model
+can only read another registered model by spelling its name. Do not put another
+registered model's name in a comment unless you want that dependency.
+
+**Failure isolation (D431).** Every registered model is checked and created
+independently. A model that fails the form, the denylist or view creation — itself, or
+because a model in its closure failed — is unavailable and refuses only commands that
+use it, with the error naming the failing file; every other relation is unaffected.
+Every model in the closure of a semantic model's relation must build for that model to
+validate, verify or answer, so `validate --model <view model>` opens the DuckDB engine
+and fails when any model in the closure does not build. A broken registered model
+outside that closure blocks neither `validate` nor `verify`.
+
+Rill annotations and templating, YAML, incremental or partitioned models, more than one
+`sqlite_scan` per file, more than one SQLite file per closure, dependency cycles,
+non-SQLite sources, references to unregistered or generated models, and Snowflake
+materialization are **not supported**: each is refused (`E_UNSUPPORTED_VIEW_FORM` or
+`E_NONDETERMINISTIC_VIEW`), never approximated. (Rill v0.90.5 cannot build a model with
+two relative `sqlite_scan` calls, so neither does Agent BI.)
 
 ## Ask questions without a model
 
@@ -144,7 +231,9 @@ agent-bi save --from out/<hash>.answer.json --name <query_name> \
   --expected-sql '<independent SQLite SELECT>'
 ```
 
-This is a template: replace every placeholder. The expected SQL must compute the
+This is a template: replace every placeholder. `save --verify` runs the independent
+route installed with Agent BI read-only against the source SQLite file; it never reads
+code from the workspace or from a source checkout. The expected SQL must compute the
 same columns and deterministic row ordering as the semantic query, by an independent
 route. Do not derive the expected result by copying Agent BI's compiled SQL or its
 printed number. Existing saved queries require `--force` to replace.

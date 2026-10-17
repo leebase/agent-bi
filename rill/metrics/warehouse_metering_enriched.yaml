@@ -1,0 +1,36 @@
+# agent-bi: generated from semantic/warehouse_metering_enriched.yaml — do not edit; edit the semantic model and re-run compile-rill
+type: metrics_view
+display_name: warehouse_metering_enriched
+model: warehouse_metering_enriched
+timeseries: usage_day
+first_day_of_week: 1
+explore:
+  skip: true
+dimensions:
+  - name: warehouse_name
+    column: warehouse_name
+  - name: warehouse_size
+    column: warehouse_size
+  - name: cost_center
+    column: cost_center
+measures:
+  - name: row_count
+    expression: COUNT(*)
+  - name: total_credits_used_compute
+    expression: SUM("credits_used_compute")
+  - name: avg_credits_used_compute
+    expression: AVG("credits_used_compute")
+  - name: total_credits_used_cloud_services
+    expression: SUM("credits_used_cloud_services")
+  - name: avg_credits_used_cloud_services
+    expression: AVG("credits_used_cloud_services")
+  - name: total_credits_used
+    expression: SUM("credits_used")
+  - name: avg_credits_used
+    expression: AVG("credits_used")
+  - name: distinct_warehouse_name
+    expression: COUNT(DISTINCT "warehouse_name")
+  - name: distinct_warehouse_size
+    expression: COUNT(DISTINCT "warehouse_size")
+  - name: distinct_cost_center
+    expression: COUNT(DISTINCT "cost_center")

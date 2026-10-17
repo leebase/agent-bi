@@ -1,0 +1,60 @@
+{
+  "name": "credits_by_size_by_month",
+  "query_hash": "sha256:9a2f2e7ef5eab89b8f9416e4662b27733961234e6b7c1951a5d7fbdc4270cb5a",
+  "semantic_digest": "sha256:9f55ab33ee689c96af67954eec6a0114ba8771706d9326937a193b5d731ff7f5",
+  "definition_digests": {
+    "base_table": "sha256:0c586ca6f9c653498f16c71ffc7ed3d5514f7c8418c80b5ee2f87076e69aeef0",
+    "models_digest": "sha256:3b088bce64b793c814ed0e95a7e49d7110ea70d9d2b014ba84cfb017553242d2",
+    "total_credits_used": "sha256:a4120ebdaffd08277c19d2373cdf9a5101a65859e6f8ac41dbf327f7ccafe72a",
+    "usage_day": "sha256:bb081e12cd1ef39b34688b24c0aa57320018e35c3dcd412867cae0f69cdbce6c",
+    "warehouse_size": "sha256:54e9cf1481af8fd706fb289c3800f237fd3d28470479f661b20a23e6ed65b68f"
+  },
+  "semantic_query": {
+    "schema_version": "semantic-query/1.0",
+    "model": "warehouse_metering_enriched",
+    "table": "warehouse_metering_enriched",
+    "metrics": [
+      "total_credits_used"
+    ],
+    "dimensions": [
+      "warehouse_size"
+    ],
+    "time": {
+      "dimension": "usage_day",
+      "grain": "month"
+    },
+    "filters": [],
+    "named_filters": [],
+    "order_by": [],
+    "limit": 1000
+  },
+  "expected": {
+    "columns": [
+      "warehouse_size",
+      "time_bucket",
+      "total_credits_used"
+    ],
+    "rows": [
+      [
+        "X-LARGE",
+        "2026-06-01",
+        2739.0
+      ],
+      [
+        "LARGE",
+        "2026-06-01",
+        1093.0
+      ],
+      [
+        "MEDIUM",
+        "2026-06-01",
+        544.0
+      ]
+    ]
+  },
+  "expected_computed_by": "direct-sql",
+  "expected_sql": "SELECT w.size AS warehouse_size, date(m.usage_day, 'start of month') AS time_bucket, SUM(m.credits_used) AS total_credits_used FROM warehouse_metering_history m LEFT JOIN show_warehouses w ON w.name = m.warehouse_name GROUP BY w.size, date(m.usage_day, 'start of month') ORDER BY total_credits_used DESC, warehouse_size ASC",
+  "expected_sql_by": "sprint-6",
+  "expected_at": "2026-10-16T23:37:01Z",
+  "fixture_sha256": "sha256:c6b43d5cd25de87858f63902e090859d95a9d9163725ea37c9ef1c98c2838ece"
+}

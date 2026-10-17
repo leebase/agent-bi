@@ -130,15 +130,20 @@ class DuckDBCatalog:
                 pks.update(names)
         except AgentBiError:  # engine without duckdb_constraints support: fall through
             pass
-        if not pks and self._engine.attach_type(catalog) == "sqlite":
-            path = self._engine.attach_path(catalog)
-            con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-            try:
-                for row in con.execute("SELECT name, pk FROM pragma_table_info(?)", (table,)):
-                    if row[1]:
-                        pks.add(row[0])
-            finally:
-                con.close()
+        if not pks:
+            try:  # a view is not an attached SQLite catalog; it has no PK fallback
+                is_sqlite_attach = self._engine.attach_type(catalog) == "sqlite"
+            except AgentBiError:
+                is_sqlite_attach = False
+            if is_sqlite_attach:
+                path = self._engine.attach_path(catalog)
+                con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+                try:
+                    for row in con.execute("SELECT name, pk FROM pragma_table_info(?)", (table,)):
+                        if row[1]:
+                            pks.add(row[0])
+                finally:
+                    con.close()
         return pks
 
     def _iso_date_text(self, fqn: str, q: str) -> bool:

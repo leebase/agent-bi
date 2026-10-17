@@ -17,6 +17,11 @@ from agent_bi import fs_txn
 from agent_bi.errors import validation_error
 from agent_bi.query.contract import parse_query
 from agent_bi.query.verified import current_verified_queries
+from agent_bi.rill_models import (
+    current_models_digest,
+    registered_names_from_project,
+    rill_dir_from_source,
+)
 from agent_bi.semantic.model import dump_yaml, load_model_dict
 from agent_bi.semantic.scan import paths_for
 from agent_bi.semantic.validate import validate
@@ -46,8 +51,15 @@ def accept(model_name: str, path: str, by: str, project_dir: Path) -> str:
         return f"{path} is already confirmed (by {entry.get('by')}); nothing changed"
     if path.startswith(_METRIC_PREFIX):
         metric = path.removeprefix(_METRIC_PREFIX).removesuffix("]")
+        models_digest = current_models_digest(
+            rill_dir_from_source(project_dir, (sidecar.get("relation") or {}).get("source")),
+            model,
+            registered_names_from_project(project_dir),
+        )
         covering = [
-            n for n in current_verified_queries(sidecar.get("verified_queries") or {}, model)
+            n for n in current_verified_queries(
+                sidecar.get("verified_queries") or {}, model, models_digest
+            )
             if metric in parse_query(sidecar["verified_queries"][n]["semantic_query"]).metrics
         ]
         if not covering:

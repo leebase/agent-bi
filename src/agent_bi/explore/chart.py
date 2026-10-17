@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -61,7 +62,21 @@ def load_theme(project_dir: Path, name: str | None) -> dict[str, Any]:
         raise validation_error("THEME_NOT_FOUND", f"theme name {name!r} must match ^[a-z][a-z0-9_-]*$")
     path = Path(project_dir) / "themes" / f"{name}.json"
     if not path.is_file():
-        raise validation_error("THEME_NOT_FOUND", f"theme {name!r}: {path} does not exist")
+        if name != DEFAULT_THEME:
+            raise validation_error("THEME_NOT_FOUND", f"theme {name!r}: {path} does not exist")
+        # D436: the default theme ships installed; a project themes/default.json still wins.
+        source = resources.files("agent_bi.explore").joinpath("default_theme.json")
+        try:
+            data = json.loads(source.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise validation_error(
+                "THEME_NOT_FOUND", f"theme {name!r}: installed {source} is not valid JSON: {exc}"
+            ) from exc
+        if not isinstance(data, dict):
+            raise validation_error(
+                "THEME_NOT_FOUND", f"theme {name!r}: installed {source} must hold a JSON object"
+            )
+        return data
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:

@@ -29,9 +29,12 @@ Exit codes: 2 validation or contract error (user-fixable); 3 engine or connectio
 | `E_MODEL_NOT_FOUND` | 2 | The semantic model file does not exist. |
 | `E_NAME_COLLISION` | 2 | Two objects share one name in the model's single global namespace (§4.1.1 rule 2); the message names both. |
 | `E_NAME_EXISTS` | 2 | save found an existing query or component with that name; it is never overwritten without --force (ADR-009). |
+| `E_NONDETERMINISTIC_VIEW` | 2 | A registered Rill model contains a nondeterministic construct (§5.13 rule 3); nothing is executed. |
 | `E_NOT_IMPLEMENTED` | 2 | The command is registered but not implemented yet. |
+| `E_NOT_READONLY` | 2 | The independent-route program (§5.6) accepts exactly one SELECT or WITH statement; save --verify maps this to E_STATEMENT_NOT_ALLOWED. |
 | `E_NO_INDEPENDENT_SQL` | 2 | save --verify needs --expected-sql: a verified query is never created from a single route (§5.10). |
 | `E_NO_VERIFIED_MATCH` | 4 | ask --question found no verified or saved query with that normalized question (§5.8); a normal outcome the skill branches on. |
+| `E_OPERATOR_FILE` | 2 | compile-rill refuses to overwrite an operator-owned rill/models/<model>.sql that lacks the generated header (ADR-009, §5.13 rule 7). |
 | `E_PARTIAL_PUBLISH` | 3 | A multi-file publish failed midway (§5.14); the files already replaced are listed and the staged files are kept. validate reports the inconsistency. |
 | `E_PATCH_REJECTED` | 2 | The whole enrichment patch was refused before anything was written: shape, size, UUID, model, an unknown op, a key named sql/expected_sql, or an add_metric expr outside the metric grammar (the message lists the failing operation index). |
 | `E_PATCH_TOUCHES_CONFIRMED` | 2 | An enrichment patch would rewrite a confirmed entry without --allow-confirmed matching that exact leaf path; nothing was written. |
@@ -43,6 +46,7 @@ Exit codes: 2 validation or contract error (user-fixable); 3 engine or connectio
 | `E_RESOLVE_AMBIGUOUS` | 5 | resolve found more than one valid binding and refused to choose; the candidates are in out/resolution.json (§5.15); a normal outcome the skill branches on. |
 | `E_RESOLVE_UNRESOLVED` | 6 | resolve met a word or construct outside its closed grammar; the reasons are in out/resolution.json (§5.15); a normal outcome the skill branches on. |
 | `E_SNAPSHOT_CHANGED` | 3 | The data file's digest changed between the before and after reads of a scan or query. |
+| `E_SQL` | 3 | The independent-route program (§5.6) could not execute the supplied SQL on the read-only SQLite fixture; save --verify maps this to E_VERIFY_MISMATCH. |
 | `E_STATEMENT_NOT_ALLOWED` | 2 | Engine.execute accepts exactly one SELECT or WITH statement. |
 | `E_SYNONYM_NOT_UNIQUE` | 2 | An add_synonyms value is already used as a synonym or object name in this semantic model; the message names both paths. |
 | `E_THEME_NOT_FOUND` | 2 | The named chart theme file themes/<name>.json does not exist (§5.9). |
@@ -57,4 +61,5 @@ Exit codes: 2 validation or contract error (user-fixable); 3 engine or connectio
 | `E_UNSUPPORTED_METRIC_EXPR` | 2 | A metric expr is outside the closed grammar (§5.3.2), or names a column that is not a fact or dimension column. |
 | `E_UNSUPPORTED_MULTI_TABLE` | 2 | v1 compiles over exactly one table. |
 | `E_UNSUPPORTED_RELATIONSHIPS` | 2 | relationships[] must be absent in v1. |
+| `E_UNSUPPORTED_VIEW_FORM` | 2 | A Rill model is outside the closed supported form (§5.13 rule 2) or DuckDB cannot create its view; nothing is executed. |
 | `E_VERIFY_MISMATCH` | 2 | The compiled query and the operator-supplied independent SQL disagree; save wrote nothing (§5.10). |

@@ -112,7 +112,7 @@ def run_diff(
 
     engine = open_engine(engine_name, config)
     try:
-        alias, _ = engine.resolve_relation(base["database"], base["schema"])
+        alias = engine.data_alias(base["database"], base["schema"], base["table"])
         before = engine.as_of(alias).value
         relation = DuckDBCatalog(engine).describe(base["database"], base["schema"], base["table"])
         after = engine.as_of(alias).value
@@ -138,7 +138,7 @@ def run_diff(
         now = utc_now()
         objs, entries, ignored, primary_key = generate(relation, model_name, now)
         new_sidecar = _sidecar(
-            engine, relation, model_name, alias, entries, ignored, now, before
+            engine, relation, model_name, alias, entries, ignored, now, before, model
         )
         try:
             merged = refresh_merge_detailed(

@@ -11,7 +11,8 @@ import yaml
 from agent_bi.initialize import plan_config
 from agent_bi.main import main
 from tests.conftest import IDLE
-from tests.s3_helpers import MODEL, make_project, manifests, tree_hash
+from tests.s3_helpers import MODEL, manifests, tree_hash
+from tests.s6_helpers import make_project, strip_rill_models
 
 ARGS = ["--sqlite", "tests/fixtures/idle-warehouse-waste.sqlite", "--table",
         "warehouse_metering_history", "--model", MODEL]
@@ -156,6 +157,11 @@ def test_fresh_clone_reproducibility_mechanism(tmp_path):
         pytest.skip("git not available")
     (tmp_path / "src").mkdir()
     src = make_project(tmp_path / "src")
+    # This test drops all of rill/ and regenerates it, which an operator-owned Rill model
+    # forbids; it is only about the idle table model, so the view registration is removed.
+    strip_rill_models(src)
+    for operator in (src / "rill" / "models").glob("*.sql"):
+        operator.unlink()
     git = ["git", "-c", "user.name=t", "-c", "user.email=t@example.com"]
     subprocess.run([*git, "init", "-q"], cwd=src, check=True)
     from agent_bi.compile_rill import compile_rill

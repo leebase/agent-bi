@@ -21,6 +21,7 @@ from agent_bi.provenance_manifest import (
     manifest_text,
     new_build_id,
 )
+from agent_bi.rill_models import current_models_digest
 from agent_bi.semantic.model import load_model_dict
 from agent_bi.semantic.provenance import load_sidecar_dict
 from agent_bi.semantic.scan import paths_for
@@ -79,33 +80,59 @@ def plan_compile_rill(
     """Return ``({repo-relative path: text}, manifest path, superseded files to delete)``
     without writing anything."""
     relation_kind = (sidecar_dict.get("relation") or {}).get("kind", "table")
-    if relation_kind != "table":
-        raise validation_error(
-            "NOT_IMPLEMENTED", f"compile-rill for a {relation_kind} model arrives in Sprint 6"
-        )
     table = model_dict["tables"][0]
-    base = table["base_table"]
-    alias, schema = engine.resolve_relation(base["database"], base["schema"])
-    if engine.attach_type(alias) != "sqlite":
-        raise validation_error(
-            "NOT_IMPLEMENTED",
-            f"compile-rill supports SQLite sources only in v1; {alias!r} is {engine.attach_type(alias)}",
-        )
-    columns = catalog_columns(engine, alias, schema, base["table"])
     rill_rel = PurePosixPath(config.rill.project_dir).as_posix()
     rill_dir_abs = (project_dir / config.rill.project_dir).resolve()
-    source_path = rill_target.relative_source_path(engine.attach_path(alias), rill_dir_abs)
-    files = rill_target.render(
-        model_dict, sidecar_dict, project_name=config.project, columns=columns,
-        source_path=source_path,
-    )
+    if relation_kind == "view":
+        # §5.13 rule 7, ADR-009: the operator's rill/models/<name>.sql is the model and is
+        # never generated, rewritten or translated; the metrics view references it by name.
+        # A model the engine could not make available is refused here (D431) before any
+        # output is computed or published.
+        engine.require_rill_model(table["base_table"]["table"])
+        files = rill_target.render_view(
+            model_dict, sidecar_dict, project_name=config.project,
+            rill_model=table["base_table"]["table"],
+        )
+        generated = rill_target.generated_paths_view(model_name)
+    elif relation_kind == "table":
+        model_sql_rel = f"{rill_rel}/models/{model_name}.sql"
+        existing = project_dir / model_sql_rel
+        if existing.is_file() and not existing.read_text(encoding="utf-8").startswith(
+            rill_target.sql_header(model_name)
+        ):
+            raise validation_error(
+                "OPERATOR_FILE",
+                f"{model_sql_rel} does not begin with the agent-bi generated header, so it is "
+                "an operator-owned Rill model; compile-rill never overwrites it (ADR-009, "
+                "§5.13 rule 7)",
+            )
+        base = table["base_table"]
+        alias, schema = engine.resolve_relation(base["database"], base["schema"])
+        if engine.attach_type(alias) != "sqlite":
+            raise validation_error(
+                "NOT_IMPLEMENTED",
+                f"compile-rill supports SQLite sources only in v1; {alias!r} is {engine.attach_type(alias)}",
+            )
+        columns = catalog_columns(engine, alias, schema, base["table"])
+        source_path = rill_target.relative_source_path(engine.attach_path(alias), rill_dir_abs)
+        files = rill_target.render(
+            model_dict, sidecar_dict, project_name=config.project, columns=columns,
+            source_path=source_path,
+        )
+        generated = rill_target.generated_paths(model_name)
+    else:
+        raise validation_error(
+            "UNSUPPORTED_VIEW_FORM", f"unsupported relation kind {relation_kind!r} in the sidecar"
+        )
     outputs = {f"{rill_rel}/{p}": text for p, text in files.items()}
     bid = build_id or new_build_id()
     manifest = build_manifest(
         bid, model_name,
-        {f"{rill_rel}/{p}": files[p] for p in rill_target.generated_paths(model_name)},
+        {f"{rill_rel}/{p}": files[p] for p in generated},
         model_bytes, sidecar_bytes,
-        (sidecar_dict.get("relation") or {}).get("models_digest"),
+        current_models_digest(
+            rill_dir_abs, model_dict, config.engines.duckdb.rill_models
+        ),
         rill_target.RILL_SCHEMA_PIN,
     )
     path = manifest_path(rill_rel, model_name)

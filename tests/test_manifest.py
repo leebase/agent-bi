@@ -10,7 +10,8 @@ from agent_bi.compile_rill import compile_rill
 from agent_bi.config import load_config
 from agent_bi.provenance_manifest import SCHEMA_VERSION, new_build_id, sidecar_digest
 from agent_bi.targets.rill import RILL_SCHEMA_PIN, generated_paths
-from tests.s3_helpers import MODEL, make_project, manifests
+from tests.s3_helpers import MODEL, manifests
+from tests.s6_helpers import make_project
 
 
 def sha(data: bytes) -> str:

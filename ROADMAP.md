@@ -29,13 +29,25 @@ These are proposals, not scheduled or authorized implementation work:
 - Resolver usability: fewer repeated choices and an explicit policy for common smart
   punctuation; any grammar change must preserve refusal semantics and frozen regressions.
 
+## Direction (D430, 2026-10-16)
+
+Agent BI is the deterministic trust and control plane for agent-built analytics on Rill.
+Rill owns transformation execution, the metrics runtime and the dashboards; Agent BI owns
+trust in them. The original "replace Power BI with agent-first development" goal is the
+project's origin, not its product definition. The SemanticQuery compiler stays as an
+independent verification route and future Snowflake compilation, in maintenance mode.
+
 ## Planned milestones — not started
 
 | Work | Intended acceptance |
 |---|---|
-| M2: given a view (original Sprint 6) | Reproduce the table workflow over a view combining fixture tables; independently verify its breakdowns and render it in Rill. |
-| M3: Snowflake parity (original Sprint 7) | Load unchanged semantic definitions into Snowflake and demonstrate independently checked parity across engines. Requires account access and explicit NULL-ordering conventions. |
+| M2: trust Rill models | An operator writes one ordinary Rill SQL model joining two tables. Agent BI does not generate or rewrite that join; `init` consumes its output, builds the semantic and dashboard layer, independently verifies two known answers, and changing the Rill model makes those verifications STALE. |
+| M2.x: govern agent changes | When Rill's MCP server or developer agent changes analytics definitions, Agent BI detects the semantic change, demotes trust and requires acceptance and evidence again. Designed from pinned evidence of Rill's actual local write path. |
+| Rill skill | Deterministic-first resolution offered inside Rill's own agent experience as a project skill, instead of a separate chat interface. |
+| M3: Snowflake | Carry governed definitions into Snowflake's warehouse-native semantic representation with independently checked parity. Requires account access and explicit NULL-ordering conventions. |
 
-There are no delivery dates. M1 acceptance did not start these milestones; sequencing
-will follow evidence from actual consumers. The architecture describes some planned
-interfaces; it is not a claim that those commands work in 0.1.0.
+Not planned, because Rill already provides them: a join or relationship compiler, a chat
+UI, a built-in LLM client, sharing, alerts and Rill administration.
+
+There are no delivery dates. The architecture describes some planned interfaces; it is not
+a claim that those commands work in 0.1.0.

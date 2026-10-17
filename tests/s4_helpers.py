@@ -22,9 +22,6 @@ def make_s4_project(tmp_path: Path) -> Path:
     p = make_project(tmp_path)
     shutil.copytree(ROOT / "tests" / "fixtures" / "known-answers", p / "tests/fixtures/known-answers")
     shutil.copytree(ROOT / "rill", p / "rill", ignore=shutil.ignore_patterns("tmp"))
-    shutil.copytree(ROOT / "themes", p / "themes")
-    (p / "scripts").mkdir()
-    shutil.copy(ROOT / "scripts" / "compute_known_answer.py", p / "scripts")
     return p
 
 
